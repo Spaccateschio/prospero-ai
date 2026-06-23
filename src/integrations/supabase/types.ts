@@ -1073,6 +1073,7 @@ export type Database = {
           due_date: string | null
           file_url: string | null
           id: string
+          is_demo: boolean
           issue_date: string | null
           notes: string | null
           number: string | null
@@ -1094,6 +1095,7 @@ export type Database = {
           due_date?: string | null
           file_url?: string | null
           id?: string
+          is_demo?: boolean
           issue_date?: string | null
           notes?: string | null
           number?: string | null
@@ -1115,6 +1117,7 @@ export type Database = {
           due_date?: string | null
           file_url?: string | null
           id?: string
+          is_demo?: boolean
           issue_date?: string | null
           notes?: string | null
           number?: string | null
@@ -1462,6 +1465,44 @@ export type Database = {
           },
         ]
       }
+      transaction_categories: {
+        Row: {
+          color: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -1474,7 +1515,11 @@ export type Database = {
           description: string | null
           id: string
           invoice_id: string | null
+          is_demo: boolean
+          is_forecast: boolean
+          payment_method: string | null
           reconciled: boolean
+          recurrence: string | null
           source: string | null
           source_ref: string | null
           status: Database["public"]["Enums"]["transaction_status"]
@@ -1492,7 +1537,11 @@ export type Database = {
           description?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
+          is_forecast?: boolean
+          payment_method?: string | null
           reconciled?: boolean
+          recurrence?: string | null
           source?: string | null
           source_ref?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -1510,7 +1559,11 @@ export type Database = {
           description?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
+          is_forecast?: boolean
+          payment_method?: string | null
           reconciled?: boolean
+          recurrence?: string | null
           source?: string | null
           source_ref?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
