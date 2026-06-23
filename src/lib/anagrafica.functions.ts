@@ -97,7 +97,8 @@ export const saveCompanyAnagrafica = createServerFn({ method: "POST" })
 
     const { error: updateErr } = await supabase
       .from("companies")
-      .update(updatePayload)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(updatePayload as any)
       .eq("id", data.company_id);
     if (updateErr) throw new Error(updateErr.message);
 
