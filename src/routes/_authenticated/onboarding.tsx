@@ -386,12 +386,13 @@ function SkipStep({ title, body, onBack, onNext }: { title: string; body: string
 }
 
 function Step1({
-  values, sources, onChange, onProvider, onNext,
+  values, sources, onChange, onProvider, onExtras, onNext,
 }: {
   values: AnagraficaValues;
   sources: FieldSources;
   onChange: (anagrafica: AnagraficaValues, sources: FieldSources, provider?: string) => void;
   onProvider: (provider: string) => void;
+  onExtras: (extras: VisuraExtras) => void;
   onNext: () => void;
 }) {
   return (
@@ -405,6 +406,7 @@ function Step1({
           sources={sources}
           onChange={(v, s) => onChange(v, s)}
           onVerified={(provider) => onProvider(provider)}
+          onExtras={onExtras}
         />
 
         <div className="flex justify-end">
