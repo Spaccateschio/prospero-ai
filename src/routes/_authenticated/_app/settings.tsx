@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Loader2, RefreshCw, Save, Settings as SettingsIcon, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Database, Loader2, RefreshCw, Save, Settings as SettingsIcon, ShieldAlert, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
@@ -19,6 +19,7 @@ import {
 } from "@/components/company/anagrafica-form";
 import { DocumentsSection } from "@/components/company/documents-section";
 import { getCompanyAnagrafica, saveCompanyAnagrafica } from "@/lib/anagrafica.functions";
+import { clearDemoData, countDemoData, seedDemoData } from "@/lib/dashboard.functions";
 
 export const Route = createFileRoute("/_authenticated/_app/settings")({
   component: SettingsPage,
