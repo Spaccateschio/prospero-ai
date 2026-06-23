@@ -318,12 +318,42 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
             Verifica e compila
           </Button>
         </div>
+
+        {/* Upload visura camerale */}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Hai una visura camerale?</span> Caricala in PDF
+            e l'AI compilerà i dati automaticamente (anche senza Partita IVA).
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleVisuraUpload(f);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={extracting}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {extracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+            Carica visura (PDF)
+          </Button>
+        </div>
+
         {lastResult && lastResult.status !== "success" && (
           <Alert variant="default" className="mt-3 border-amber-500/30 bg-amber-500/10">
             <ShieldAlert className="h-4 w-4 text-amber-400" />
             <AlertTitle className="text-amber-300">Verifica automatica non riuscita</AlertTitle>
             <AlertDescription className="text-xs text-amber-200/80">
-              Nessun problema: puoi proseguire compilando manualmente i campi essenziali qui sotto.
+              Nessun problema: puoi proseguire compilando manualmente i campi essenziali qui sotto,
+              oppure caricare la visura camerale qui sopra.
             </AlertDescription>
           </Alert>
         )}
