@@ -57,6 +57,7 @@ function SettingsPage() {
         <TabsList>
           <TabsTrigger value="anagrafica">Anagrafica azienda</TabsTrigger>
           <TabsTrigger value="documents">Documenti</TabsTrigger>
+          <TabsTrigger value="demo">Dati di prova</TabsTrigger>
           <TabsTrigger value="integrations">Integrazioni</TabsTrigger>
         </TabsList>
 
@@ -74,11 +75,102 @@ function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="demo" className="mt-6">
+          <DemoDataTab companyId={activeId} />
+        </TabsContent>
         <TabsContent value="integrations" className="mt-6">
           <IntegrationsTab />
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function DemoDataTab({ companyId }: { companyId: string }) {
+  const queryClient = useQueryClient();
+  const fetchCount = useServerFn(countDemoData);
+  const seedFn = useServerFn(seedDemoData);
+  const clearFn = useServerFn(clearDemoData);
+
+  const countQuery = useQuery({
+    queryKey: ["demo-count", companyId],
+    queryFn: () => fetchCount({ data: { company_id: companyId } }),
+  });
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["demo-count", companyId] });
+    queryClient.invalidateQueries({ queryKey: ["transactions", companyId] });
+    queryClient.invalidateQueries({ queryKey: ["cashflow-summary", companyId] });
+    queryClient.invalidateQueries({ queryKey: ["forecast", companyId] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-kpis", companyId] });
+    queryClient.invalidateQueries({ queryKey: ["top-expense-cat", companyId] });
+  };
+
+  const seed = useMutation({
+    mutationFn: () => seedFn({ data: { company_id: companyId } }),
+    onSuccess: (r) => {
+      toast.success(`Dati demo caricati: ${r.transactions} movimenti, ${r.invoices} fatture`);
+      invalidateAll();
+    },
+    onError: (err) => toast.error("Caricamento fallito", { description: err instanceof Error ? err.message : "" }),
+  });
+
+  const clear = useMutation({
+    mutationFn: () => clearFn({ data: { company_id: companyId } }),
+    onSuccess: () => {
+      toast.success("Dati demo rimossi");
+      invalidateAll();
+    },
+    onError: (err) => toast.error("Rimozione fallita", { description: err instanceof Error ? err.message : "" }),
+  });
+
+  const hasDemo = (countQuery.data?.transactions ?? 0) + (countQuery.data?.invoices ?? 0) > 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Database className="h-4 w-4" /> Dati di prova</CardTitle>
+        <CardDescription>
+          Popola velocemente dashboard e cash flow con dati realistici per esplorare l'app.
+          I dati sono marcati come "demo" e possono essere rimossi in qualsiasi momento senza toccare i tuoi dati reali.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-md border p-4 text-sm">
+          <div className="font-medium mb-1">Stato attuale</div>
+          {countQuery.isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : hasDemo ? (
+            <p className="text-muted-foreground">
+              {countQuery.data?.transactions ?? 0} movimenti demo e {countQuery.data?.invoices ?? 0} fatture demo presenti.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">Nessun dato demo presente.</p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => seed.mutate()} disabled={seed.isPending}>
+            {seed.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {hasDemo ? "Ricarica dati demo" : "Carica dati demo"}
+          </Button>
+          {hasDemo && (
+            <Button variant="outline" onClick={() => clear.mutate()} disabled={clear.isPending}>
+              {clear.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Rimuovi dati demo
+            </Button>
+          )}
+        </div>
+
+        <Alert>
+          <AlertTitle className="text-xs">Cosa viene generato</AlertTitle>
+          <AlertDescription className="text-xs">
+            6 mesi di entrate (vendite, servizi) e uscite (affitto, stipendi, fornitori, utenze) realistiche,
+            2 ricorrenze mensili (affitto e stipendi), 1 movimento previsionale a 20 giorni, 2 fatture aperte demo.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
   );
 }
 
