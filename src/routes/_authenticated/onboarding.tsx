@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,10 +32,17 @@ import { cn } from "@/lib/utils";
 import { useActiveCompany, useCreateCompany } from "@/hooks/use-companies";
 import { useProfile } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AnagraficaForm, emptyAnagrafica,
+  type AnagraficaValues, type FieldSources,
+} from "@/components/company/anagrafica-form";
+import { useServerFn } from "@tanstack/react-start";
+import { saveCompanyAnagrafica } from "@/lib/anagrafica.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: OnboardingWizard,
 });
+
 
 const ITALIAN_REGIONS = [
   "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli-Venezia Giulia",
@@ -62,20 +70,8 @@ const ISO_OPTIONS = [
   { id: "iso_27001", label: "ISO 27001 — Sicurezza informazioni" },
 ];
 
-const step1Schema = z.object({
-  name: z.string().trim().min(2, "Obbligatorio").max(120),
-  legal_name: z.string().trim().max(160).optional().or(z.literal("")),
-  vat: z.string().trim().max(20).optional().or(z.literal("")),
-  ateco: z.string().trim().max(10).optional().or(z.literal("")),
-  sector: z.string().trim().max(80).optional().or(z.literal("")),
-  region: z.string().optional(),
-  province: z.string().trim().max(60).optional().or(z.literal("")),
-  city: z.string().trim().max(80).optional().or(z.literal("")),
-  regime_fiscale: z.enum(["ordinario", "semplificato", "forfettario", "agricolo"]).optional(),
-  company_type: z
-    .enum(["srl", "srls", "spa", "sapa", "snc", "sas", "ditta_individuale", "cooperativa", "altro"])
-    .optional(),
-});
+// step1: gestito dal componente AnagraficaForm (vedi components/company/anagrafica-form.tsx)
+
 
 const step2Schema = z.object({
   employees_count: z.coerce.number().int().min(0).max(100000).optional(),
@@ -88,12 +84,22 @@ const step6Schema = z.object({
   iva_frequency: z.enum(["mensile", "trimestrale", "annuale"]),
 });
 
-type Step1Values = z.infer<typeof step1Schema>;
 type Step2Values = z.infer<typeof step2Schema>;
 type Step6Values = z.infer<typeof step6Schema>;
 
-type WizardData = Partial<Step1Values> &
-  Partial<Step2Values> & { iva_frequency?: "mensile" | "trimestrale" | "annuale" };
+type WizardData = {
+  anagrafica: AnagraficaValues;
+  sources: FieldSources;
+  provider: string | null;
+  regime_fiscale?: "ordinario" | "semplificato" | "forfettario" | "agricolo";
+  // step 2
+  employees_count?: number;
+  annual_revenue?: number;
+  founded_year?: number;
+  iso_certifications: string[];
+  // step 6
+  iva_frequency?: "mensile" | "trimestrale" | "annuale";
+};
 
 const STEPS = [
   { id: 1, title: "Crea azienda", description: "Dati anagrafici e fiscali principali" },
@@ -105,13 +111,20 @@ const STEPS = [
   { id: 7, title: "Tutto pronto", description: "Benvenuto in CFO AI" },
 ];
 
+
 function OnboardingWizard() {
   const navigate = useNavigate();
   const { companies, isLoading } = useActiveCompany();
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<WizardData>({ iso_certifications: [] });
+  const [data, setData] = useState<WizardData>({
+    anagrafica: emptyAnagrafica(),
+    sources: {},
+    provider: null,
+    iso_certifications: [],
+  });
   const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
   const createCompany = useCreateCompany();
+  const persistAnagrafica = useServerFn(saveCompanyAnagrafica);
 
   // Se c'è già un'azienda e l'utente non l'ha appena creata, vai alla dashboard
   useEffect(() => {
@@ -137,7 +150,7 @@ function OnboardingWizard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Wallet className="h-4 w-4" />
           </div>
@@ -151,7 +164,7 @@ function OnboardingWizard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-6 py-8">
         <Progress value={(step / STEPS.length) * 100} className="mb-8 h-1.5" />
 
         <div className="grid gap-8 md:grid-cols-[220px_1fr]">
@@ -187,9 +200,23 @@ function OnboardingWizard() {
           <div>
             {step === 1 && (
               <Step1
-                defaults={data}
-                onNext={async (values) => {
-                  setData((d) => ({ ...d, ...values }));
+                values={data.anagrafica}
+                sources={data.sources}
+                regimeFiscale={data.regime_fiscale}
+                onChange={(anagrafica, sources, provider) =>
+                  setData((d) => ({
+                    ...d,
+                    anagrafica,
+                    sources,
+                    provider: provider ?? d.provider,
+                  }))
+                }
+                onChangeRegime={(rf) => setData((d) => ({ ...d, regime_fiscale: rf }))}
+                onNext={() => {
+                  if (!data.anagrafica.name.trim()) {
+                    toast.error("Inserisci almeno il nome dell'azienda");
+                    return;
+                  }
                   setStep(2);
                 }}
               />
@@ -200,27 +227,58 @@ function OnboardingWizard() {
                 onBack={() => setStep(1)}
                 pending={createCompany.isPending}
                 onNext={async (values) => {
-                  const merged = { ...data, ...values };
+                  const merged: WizardData = { ...data, ...values, iso_certifications: values.iso_certifications ?? [] };
                   setData(merged);
-                  // Crea l'azienda alla fine dello step 2
                   try {
+                    const a = merged.anagrafica;
                     const company = await createCompany.mutateAsync({
-                      name: merged.name!,
-                      legal_name: merged.legal_name || undefined,
-                      vat: merged.vat || undefined,
-                      ateco: merged.ateco || undefined,
-                      sector: merged.sector || undefined,
-                      region: merged.region || undefined,
-                      province: merged.province || undefined,
-                      city: merged.city || undefined,
+                      name: a.name,
+                      legal_name: a.legal_name || undefined,
+                      vat: a.vat || undefined,
+                      ateco: a.ateco || undefined,
+                      sector: a.sector || undefined,
+                      region: a.region || undefined,
+                      province: a.province || undefined,
+                      city: a.city || undefined,
                       regime_fiscale: merged.regime_fiscale,
-                      company_type: merged.company_type,
+                      company_type: (a.company_type || undefined) as
+                        | "srl" | "srls" | "spa" | "sapa" | "snc" | "sas"
+                        | "ditta_individuale" | "cooperativa" | "altro" | undefined,
                       founded_year: merged.founded_year,
                       employees_count: merged.employees_count,
                       annual_revenue: merged.annual_revenue,
-                      iso_certifications: merged.iso_certifications ?? [],
+                      iso_certifications: merged.iso_certifications,
                     });
                     setCreatedCompanyId(company.id);
+
+                    // Salva campi anagrafici estesi (PEC, SDI, REA, ATECO desc, ecc.) + sources
+                    try {
+                      await persistAnagrafica({
+                        data: {
+                          company_id: company.id,
+                          values: {
+                            fiscal_code: a.fiscal_code || null,
+                            legal_form: a.legal_form || null,
+                            ateco_description: a.ateco_description || null,
+                            pec_email: a.pec_email || null,
+                            sdi_code: a.sdi_code || null,
+                            rea_code: a.rea_code || null,
+                            chamber_of_commerce: a.chamber_of_commerce || null,
+                            activity_status: a.activity_status || null,
+                            activity_start_date: a.activity_start_date || null,
+                            legal_address_street: a.legal_address_street || null,
+                            zip_code: a.zip_code || null,
+                          },
+                          sources: merged.sources,
+                          provider: merged.provider ?? undefined,
+                          mark_verified: Object.values(merged.sources).some((s) => s === "external"),
+                        },
+                      });
+                    } catch (err) {
+                      // Non-bloccante: l'azienda è già creata
+                      console.warn("saveCompanyAnagrafica failed", err);
+                    }
+
                     setStep(3);
                   } catch (err) {
                     toast.error("Errore creazione azienda", {
@@ -230,6 +288,7 @@ function OnboardingWizard() {
                 }}
               />
             )}
+
             {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => setStep(4)} />}
             {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => setStep(5)} />}
             {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => setStep(6)} />}
@@ -299,124 +358,52 @@ function SkipStep({ title, body, onBack, onNext }: { title: string; body: string
   );
 }
 
-function Step1({ defaults, onNext }: { defaults: WizardData; onNext: (v: z.infer<typeof step1Schema>) => void }) {
-  const form = useForm<z.infer<typeof step1Schema>>({
-    resolver: zodResolver(step1Schema),
-    defaultValues: {
-      name: defaults.name ?? "",
-      legal_name: defaults.legal_name ?? "",
-      vat: defaults.vat ?? "",
-      ateco: defaults.ateco ?? "",
-      sector: defaults.sector ?? "",
-      region: defaults.region,
-      province: defaults.province ?? "",
-      city: defaults.city ?? "",
-      regime_fiscale: defaults.regime_fiscale,
-      company_type: defaults.company_type,
-    },
-  });
-
+function Step1({
+  values, sources, regimeFiscale, onChange, onChangeRegime, onNext,
+}: {
+  values: AnagraficaValues;
+  sources: FieldSources;
+  regimeFiscale: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined;
+  onChange: (anagrafica: AnagraficaValues, sources: FieldSources, provider?: string) => void;
+  onChangeRegime: (rf: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined) => void;
+  onNext: () => void;
+}) {
   return (
-    <StepShell title="Crea la tua azienda" description="Inserisci i dati principali. Potrai modificarli in qualsiasi momento dalle Impostazioni.">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onNext)} className="grid gap-4 sm:grid-cols-2">
-          <FormField control={form.control} name="name" render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Nome azienda *</FormLabel>
-              <FormControl><Input placeholder="Mario Rossi SRL" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="legal_name" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ragione sociale</FormLabel>
-              <FormControl><Input placeholder="Mario Rossi Società a responsabilità limitata" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="company_type" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo società</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {COMPANY_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="vat" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Partita IVA</FormLabel>
-              <FormControl><Input placeholder="12345678901" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="ateco" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Codice ATECO</FormLabel>
-              <FormControl><Input placeholder="62.01.00" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="sector" render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Settore</FormLabel>
-              <FormControl><Input placeholder="Servizi IT, Ristorazione, Edilizia..." {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="region" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Regione</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {ITALIAN_REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="province" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Provincia</FormLabel>
-              <FormControl><Input placeholder="MI" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="city" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Città</FormLabel>
-              <FormControl><Input placeholder="Milano" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="regime_fiscale" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Regime fiscale</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  <SelectItem value="ordinario">Ordinario</SelectItem>
-                  <SelectItem value="semplificato">Semplificato</SelectItem>
-                  <SelectItem value="forfettario">Forfettario</SelectItem>
-                  <SelectItem value="agricolo">Agricolo</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
+    <StepShell
+      title="Crea la tua azienda"
+      description="Inserisci la Partita IVA e proveremo a recuperare i dati ufficiali. Tutti i campi restano modificabili."
+    >
+      <div className="space-y-6">
+        <AnagraficaForm
+          values={values}
+          sources={sources}
+          onChange={(v, s) => onChange(v, s)}
+          onVerified={(provider) => onChange(values, sources, provider)}
+        />
 
-          <div className="sm:col-span-2 flex justify-end">
-            <Button type="submit">Continua <ChevronRight className="ml-1 h-4 w-4" /></Button>
-          </div>
-        </form>
-      </Form>
+        <div className="space-y-1.5">
+          <Label htmlFor="regime-fiscale" className="text-xs">Regime fiscale</Label>
+          <Select value={regimeFiscale ?? ""} onValueChange={(v) =>
+            onChangeRegime((v || undefined) as "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined)
+          }>
+            <SelectTrigger id="regime-fiscale"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ordinario">Ordinario</SelectItem>
+              <SelectItem value="semplificato">Semplificato</SelectItem>
+              <SelectItem value="forfettario">Forfettario</SelectItem>
+              <SelectItem value="agricolo">Agricolo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={onNext}>Continua <ChevronRight className="ml-1 h-4 w-4" /></Button>
+        </div>
+      </div>
     </StepShell>
   );
 }
+
 
 function Step2({ defaults, pending, onBack, onNext }: { defaults: WizardData; pending: boolean; onBack: () => void; onNext: (v: z.infer<typeof step2Schema>) => void }) {
   const form = useForm<z.infer<typeof step2Schema>>({
