@@ -81,13 +81,14 @@ function applyVerifiedData(
   current: AnagraficaValues,
   current_sources: FieldSources,
   payload: NormalizedCompanyData,
+  source: FieldSource = "external",
 ): { values: AnagraficaValues; sources: FieldSources } {
   const merged: AnagraficaValues = { ...current };
   const sources: FieldSources = { ...current_sources };
   const setIf = (key: keyof AnagraficaValues, val: string | null | undefined) => {
     if (val && val.length > 0) {
       merged[key] = val as never;
-      sources[key] = "external";
+      sources[key] = source;
     }
   };
   setIf("vat", payload.vat);
@@ -107,10 +108,9 @@ function applyVerifiedData(
   setIf("province", payload.province);
   setIf("region", payload.region);
   setIf("zip_code", payload.zip_code);
-  // Se non c'è ancora un "name", usa la ragione sociale
   if (!merged.name && payload.legal_name) {
     merged.name = payload.legal_name;
-    sources.name = "external";
+    sources.name = source;
   }
   return { values: merged, sources };
 }
