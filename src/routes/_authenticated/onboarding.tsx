@@ -36,6 +36,7 @@ import {
   AnagraficaForm, emptyAnagrafica,
   type AnagraficaValues, type FieldSources,
 } from "@/components/company/anagrafica-form";
+import type { VisuraExtras } from "@/lib/visura-extraction.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { saveCompanyAnagrafica } from "@/lib/anagrafica.functions";
 
@@ -213,6 +214,17 @@ function OnboardingWizard() {
                 onProvider={(provider) =>
                   setData((d) => ({ ...d, provider }))
                 }
+                onExtras={(extras) =>
+                  setData((d) => ({
+                    ...d,
+                    founded_year: extras.founded_year ?? d.founded_year,
+                    employees_count: extras.employees_count ?? d.employees_count,
+                    iso_certifications:
+                      extras.iso_certifications.length > 0
+                        ? Array.from(new Set([...(d.iso_certifications ?? []), ...extras.iso_certifications]))
+                        : d.iso_certifications,
+                  }))
+                }
                 onNext={() => {
                   const a = data.anagrafica;
                   if (!a.name.trim()) {
@@ -374,12 +386,13 @@ function SkipStep({ title, body, onBack, onNext }: { title: string; body: string
 }
 
 function Step1({
-  values, sources, onChange, onProvider, onNext,
+  values, sources, onChange, onProvider, onExtras, onNext,
 }: {
   values: AnagraficaValues;
   sources: FieldSources;
   onChange: (anagrafica: AnagraficaValues, sources: FieldSources, provider?: string) => void;
   onProvider: (provider: string) => void;
+  onExtras: (extras: VisuraExtras) => void;
   onNext: () => void;
 }) {
   return (
@@ -393,6 +406,7 @@ function Step1({
           sources={sources}
           onChange={(v, s) => onChange(v, s)}
           onVerified={(provider) => onProvider(provider)}
+          onExtras={onExtras}
         />
 
         <div className="flex justify-end">

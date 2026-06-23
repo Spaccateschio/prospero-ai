@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 import { lookupVatNumber } from "@/lib/vat-lookup.functions";
 import type { NormalizedCompanyData, VatLookupResult } from "@/lib/vat-lookup.functions";
-import { extractVisuraData } from "@/lib/visura-extraction.functions";
+import { extractVisuraData, type VisuraExtras } from "@/lib/visura-extraction.functions";
 
 export type AnagraficaValues = {
   name: string;
@@ -169,11 +169,12 @@ export type AnagraficaFormProps = {
   sources: FieldSources;
   onChange: (values: AnagraficaValues, sources: FieldSources) => void;
   onVerified?: (provider: string) => void;
+  onExtras?: (extras: VisuraExtras) => void;
   /** Mostra solo i campi essenziali (per onboarding step rapido) */
   compact?: boolean;
 };
 
-export function AnagraficaForm({ values, sources, onChange, onVerified, compact = false }: AnagraficaFormProps) {
+export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
   const extractVisura = useServerFn(extractVisuraData);
   const [verifying, setVerifying] = useState(false);
@@ -273,9 +274,14 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
         }
         onChange(merged, mergedSources);
         onVerified?.("visura camerale");
+        onExtras?.(result.extras);
         setAdvancedOpen(true);
+        const extraCount =
+          (result.extras.founded_year != null ? 1 : 0) +
+          (result.extras.employees_count != null ? 1 : 0) +
+          (result.extras.iso_certifications.length > 0 ? 1 : 0);
         toast.success("Dati estratti dalla visura", {
-          description: `${result.extractedFields.length} campi precompilati — rivedi prima di salvare.`,
+          description: `${result.extractedFields.length} campi precompilati${extraCount > 0 ? ` (inclusi ${extraCount} per il passo successivo)` : ""} — rivedi prima di salvare.`,
         });
       } else {
         toast.error("Estrazione non riuscita", { description: result.message });

@@ -4,8 +4,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { NormalizedCompanyData } from "@/lib/vat-lookup.functions";
 
+export type VisuraExtras = {
+  founded_year: number | null;
+  employees_count: number | null;
+  iso_certifications: string[];
+};
+
 export type VisuraExtractionResult =
-  | { status: "success"; data: NormalizedCompanyData; extractedFields: string[] }
+  | { status: "success"; data: NormalizedCompanyData; extras: VisuraExtras; extractedFields: string[] }
   | { status: "error"; message: string };
 
 const InputSchema = z.object({
@@ -70,7 +76,10 @@ Schema atteso:
   "legal_address_street": "string (via e numero civico)",
   "city": "string (comune)",
   "province": "string (sigla provincia, 2 lettere maiuscole, es. RM)",
-  "zip_code": "string (CAP, 5 cifre)"
+  "zip_code": "string (CAP, 5 cifre)",
+  "founded_year": "number (anno di costituzione/fondazione, es. 2012) o null",
+  "employees_count": "number (numero dipendenti / addetti se presente, es. dalla sezione 'Numero addetti' o 'Dipendenti') o null",
+  "iso_certifications": "array di stringhe tra: iso_9001, iso_14001, iso_45001, iso_50001, iso_27001 (solo se esplicitamente citate nella visura, altrimenti [])"
 }`;
 
     try {
@@ -163,15 +172,47 @@ Schema atteso:
         zip_code: str(parsed.zip_code),
       };
 
+      const num = (v: unknown): number | null => {
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+        if (typeof v === "string" && v.trim()) {
+          const n = Number(v.replace(/[^\d.-]/g, ""));
+          return Number.isFinite(n) ? n : null;
+        }
+        return null;
+      };
+      const VALID_ISO = new Set(["iso_9001", "iso_14001", "iso_45001", "iso_50001", "iso_27001"]);
+      const isoArr = Array.isArray(parsed.iso_certifications)
+        ? (parsed.iso_certifications as unknown[])
+            .map((x) => (typeof x === "string" ? x.trim().toLowerCase() : ""))
+            .filter((x) => VALID_ISO.has(x))
+        : [];
+
+      let founded = num(parsed.founded_year);
+      if (!founded && normalized.activity_start_date) {
+        const m = normalized.activity_start_date.match(/^(\d{4})/);
+        if (m) founded = Number(m[1]);
+      }
+      if (founded && (founded < 1800 || founded > new Date().getFullYear())) founded = null;
+
+      const employees = num(parsed.employees_count);
+      const extras: VisuraExtras = {
+        founded_year: founded,
+        employees_count: employees && employees >= 0 ? Math.round(employees) : null,
+        iso_certifications: isoArr,
+      };
+
       const extractedFields = Object.entries(normalized)
         .filter(([, v]) => v != null && v !== "")
         .map(([k]) => k);
+      if (extras.founded_year != null) extractedFields.push("founded_year");
+      if (extras.employees_count != null) extractedFields.push("employees_count");
+      if (extras.iso_certifications.length > 0) extractedFields.push("iso_certifications");
 
       if (extractedFields.length === 0) {
         return { status: "error", message: "Nessun dato estratto: il PDF potrebbe non essere una visura." };
       }
 
-      return { status: "success", data: normalized, extractedFields };
+      return { status: "success", data: normalized, extras, extractedFields };
     } catch (err) {
       console.error("[extractVisuraData] failed", err);
       return {
