@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "CFO AI — Il tuo Direttore Finanziario AI" },
+      { name: "description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
+      { property: "og:description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
+      { name: "twitter:description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22d961af-064a-47c9-8da2-09747fa3bbcf/id-preview-d4f515e0--bd534a11-ffe4-4fce-8ebb-aa2a4aceb8f9.lovable.app-1782228372833.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22d961af-064a-47c9-8da2-09747fa3bbcf/id-preview-d4f515e0--bd534a11-ffe4-4fce-8ebb-aa2a4aceb8f9.lovable.app-1782228372833.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
