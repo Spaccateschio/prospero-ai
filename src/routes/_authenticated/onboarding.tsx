@@ -95,12 +95,22 @@ const step6Schema = z.object({
   iva_frequency: z.enum(["mensile", "trimestrale", "annuale"]),
 });
 
-type Step1Values = z.infer<typeof step1Schema>;
 type Step2Values = z.infer<typeof step2Schema>;
 type Step6Values = z.infer<typeof step6Schema>;
 
-type WizardData = Partial<Step1Values> &
-  Partial<Step2Values> & { iva_frequency?: "mensile" | "trimestrale" | "annuale" };
+type WizardData = {
+  anagrafica: AnagraficaValues;
+  sources: FieldSources;
+  provider: string | null;
+  regime_fiscale?: "ordinario" | "semplificato" | "forfettario" | "agricolo";
+  // step 2
+  employees_count?: number;
+  annual_revenue?: number;
+  founded_year?: number;
+  iso_certifications: string[];
+  // step 6
+  iva_frequency?: "mensile" | "trimestrale" | "annuale";
+};
 
 const STEPS = [
   { id: 1, title: "Crea azienda", description: "Dati anagrafici e fiscali principali" },
@@ -111,6 +121,7 @@ const STEPS = [
   { id: 6, title: "Regime IVA", description: "Frequenza adempimenti IVA" },
   { id: 7, title: "Tutto pronto", description: "Benvenuto in CFO AI" },
 ];
+
 
 function OnboardingWizard() {
   const navigate = useNavigate();
