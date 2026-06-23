@@ -219,7 +219,7 @@ export const lookupVatNumber = createServerFn({ method: "POST" })
       vat_queried: cleanVat,
       provider: result.provider,
       status: result.status,
-      raw_response: result.status === "success" ? (result.data as unknown as Record<string, unknown>) : null,
+      raw_response: result.status === "success" ? (JSON.parse(JSON.stringify(result.data)) as never) : null,
       error_message: result.status !== "success" ? result.message : null,
       requested_by: userId,
     });
