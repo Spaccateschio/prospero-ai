@@ -366,19 +366,17 @@ function SkipStep({ title, body, onBack, onNext }: { title: string; body: string
 }
 
 function Step1({
-  values, sources, regimeFiscale, onChange, onChangeRegime, onNext,
+  values, sources, onChange, onNext,
 }: {
   values: AnagraficaValues;
   sources: FieldSources;
-  regimeFiscale: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined;
   onChange: (anagrafica: AnagraficaValues, sources: FieldSources, provider?: string) => void;
-  onChangeRegime: (rf: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined) => void;
   onNext: () => void;
 }) {
   return (
     <StepShell
       title="Crea la tua azienda"
-      description="Inserisci la Partita IVA e proveremo a recuperare i dati ufficiali. Tutti i campi restano modificabili."
+      description="Inserisci la Partita IVA per compilare in automatico tutti i dati ufficiali. Sono richiesti solo 4 campi essenziali — il resto è opzionale."
     >
       <div className="space-y-6">
         <AnagraficaForm
@@ -387,21 +385,6 @@ function Step1({
           onChange={(v, s) => onChange(v, s)}
           onVerified={(provider) => onChange(values, sources, provider)}
         />
-
-        <div className="space-y-1.5">
-          <Label htmlFor="regime-fiscale" className="text-xs">Regime fiscale</Label>
-          <Select value={regimeFiscale ?? ""} onValueChange={(v) =>
-            onChangeRegime((v || undefined) as "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined)
-          }>
-            <SelectTrigger id="regime-fiscale"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ordinario">Ordinario</SelectItem>
-              <SelectItem value="semplificato">Semplificato</SelectItem>
-              <SelectItem value="forfettario">Forfettario</SelectItem>
-              <SelectItem value="agricolo">Agricolo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
         <div className="flex justify-end">
           <Button onClick={onNext}>Continua <ChevronRight className="ml-1 h-4 w-4" /></Button>
