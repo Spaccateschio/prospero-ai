@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, Calendar, LogOut, User as UserIcon } from "lucide-react";
+import { Calendar, LogOut, User as UserIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CompanySwitcher } from "@/components/company-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AlertsBell } from "@/components/alerts-bell";
 import { useAuth, useProfile } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,9 +44,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" aria-label="Eventi recenti" title="Eventi recenti">
           <Calendar className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Notifiche" title="Notifiche">
-          <Bell className="h-4 w-4" />
-        </Button>
+        <AlertsBell />
         <ThemeToggle />
 
         <DropdownMenu>
