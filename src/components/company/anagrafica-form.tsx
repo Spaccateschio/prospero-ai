@@ -274,9 +274,14 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
         }
         onChange(merged, mergedSources);
         onVerified?.("visura camerale");
+        onExtras?.(result.extras);
         setAdvancedOpen(true);
+        const extraCount =
+          (result.extras.founded_year != null ? 1 : 0) +
+          (result.extras.employees_count != null ? 1 : 0) +
+          (result.extras.iso_certifications.length > 0 ? 1 : 0);
         toast.success("Dati estratti dalla visura", {
-          description: `${result.extractedFields.length} campi precompilati — rivedi prima di salvare.`,
+          description: `${result.extractedFields.length} campi precompilati${extraCount > 0 ? ` (inclusi ${extraCount} per il passo successivo)` : ""} — rivedi prima di salvare.`,
         });
       } else {
         toast.error("Estrazione non riuscita", { description: result.message });
