@@ -232,7 +232,7 @@ export const recordInvoicePayment = createServerFn({ method: "POST" })
     return {
       invoice_id: inv.id,
       new_paid_amount: newPaid,
-      status: update.status as string,
+      status: update.status,
       movement_id,
     };
   });
