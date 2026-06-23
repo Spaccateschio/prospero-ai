@@ -36,6 +36,7 @@ import {
   AnagraficaForm, emptyAnagrafica,
   type AnagraficaValues, type FieldSources,
 } from "@/components/company/anagrafica-form";
+import type { VisuraExtras } from "@/lib/visura-extraction.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { saveCompanyAnagrafica } from "@/lib/anagrafica.functions";
 
