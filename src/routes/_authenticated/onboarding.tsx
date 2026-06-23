@@ -188,24 +188,43 @@ function OnboardingWizard() {
                   step === s.id && "bg-accent text-accent-foreground",
                 )}
               >
-                <div
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs",
-                    s.id < step
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : step === s.id
-                      ? "border-primary text-primary"
-                      : "border-muted text-muted-foreground",
-                  )}
-                >
-                  {s.id < step ? <Check className="h-3 w-3" /> : s.id}
-                </div>
-                <div className="leading-tight">
-                  <div className="font-medium">{s.title}</div>
-                  <div className="text-xs text-muted-foreground">{s.description}</div>
-                </div>
-              </li>
-            ))}
+          <ol className="space-y-3 text-sm">
+            {STEPS.map((s) => {
+              const reachable = s.id <= maxStep;
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onClick={() => goToStep(s.id)}
+                    disabled={!reachable}
+                    className={cn(
+                      "flex w-full gap-3 rounded-md p-2 text-left transition-colors",
+                      step === s.id && "bg-accent text-accent-foreground",
+                      reachable
+                        ? "hover:bg-accent/60 cursor-pointer"
+                        : "cursor-not-allowed opacity-60",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs",
+                        s.id < step
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : step === s.id
+                          ? "border-primary text-primary"
+                          : "border-muted text-muted-foreground",
+                      )}
+                    >
+                      {s.id < step ? <Check className="h-3 w-3" /> : s.id}
+                    </div>
+                    <div className="leading-tight">
+                      <div className="font-medium">{s.title}</div>
+                      <div className="text-xs text-muted-foreground">{s.description}</div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ol>
 
           <div>
