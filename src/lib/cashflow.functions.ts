@@ -169,22 +169,12 @@ type LiveProjection = {
 };
 
 async function buildLiveProjections(
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : {
-    from: (t: string) => {
-      select: (s: string) => {
-        eq: (c: string, v: string) => {
-          gte: (c: string, v: string) => {
-            lte: (c: string, v: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-          };
-        };
-      };
-    };
-  },
+  supabase: unknown,
   companyId: string,
   todayStr: string,
   horizonEndStr: string,
 ): Promise<LiveProjection[]> {
-  const sb = supabase as never as {
+  const sb = supabase as {
     from: (t: string) => {
       select: (s: string) => unknown;
     };
