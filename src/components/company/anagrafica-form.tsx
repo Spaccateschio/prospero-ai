@@ -227,6 +227,69 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
     }
   }
 
+  function inferCompanyType(legalForm: string | null | undefined): AnagraficaValues["company_type"] | null {
+    if (!legalForm) return null;
+    const s = legalForm.toLowerCase();
+    if (s.includes("s.r.l.s") || s.includes("srls") || s.includes("semplificata")) return "srls";
+    if (s.includes("s.r.l") || s.includes("srl") || s.includes("responsabilita")) return "srl";
+    if (s.includes("s.p.a") || s.includes("spa") || s.includes("per azioni")) return "spa";
+    if (s.includes("s.a.p.a") || s.includes("sapa") || s.includes("accomandita per azioni")) return "sapa";
+    if (s.includes("s.a.s") || s.includes("sas") || s.includes("accomandita semplice")) return "sas";
+    if (s.includes("s.n.c") || s.includes("snc") || s.includes("nome collettivo")) return "snc";
+    if (s.includes("cooperativa") || s.includes("coop")) return "cooperativa";
+    if (s.includes("individuale") || s.includes("ditta")) return "ditta_individuale";
+    return "altro";
+  }
+
+  async function handleVisuraUpload(file: File) {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Formato non valido", { description: "Carica un PDF della visura camerale." });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File troppo grande", { description: "Massimo 20 MB." });
+      return;
+    }
+    setExtracting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      // base64 encoding sicuro per file binari
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+      }
+      const pdf_base64 = btoa(binary);
+
+      const result = await extractVisura({ data: { pdf_base64, filename: file.name } });
+      if (result.status === "success") {
+        const { values: merged, sources: mergedSources } = applyVerifiedData(values, sources, result.data, "document");
+        // Inferisci company_type da legal_form
+        const inferred = inferCompanyType(result.data.legal_form);
+        if (inferred && !merged.company_type) {
+          merged.company_type = inferred;
+          mergedSources.company_type = "document";
+        }
+        onChange(merged, mergedSources);
+        onVerified?.("visura camerale");
+        setAdvancedOpen(true);
+        toast.success("Dati estratti dalla visura", {
+          description: `${result.extractedFields.length} campi precompilati — rivedi prima di salvare.`,
+        });
+      } else {
+        toast.error("Estrazione non riuscita", { description: result.message });
+      }
+    } catch (err) {
+      toast.error("Errore lettura file", {
+        description: err instanceof Error ? err.message : "Imprevisto durante il caricamento.",
+      });
+    } finally {
+      setExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Verifica P.IVA */}
