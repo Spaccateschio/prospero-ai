@@ -9,38 +9,265 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/_app'
+import { Route as AuthenticatedAppTaxCalendarRouteImport } from './routes/_authenticated/_app/tax-calendar'
+import { Route as AuthenticatedAppSimulationsRouteImport } from './routes/_authenticated/_app/simulations'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/_app/settings'
+import { Route as AuthenticatedAppOpportunitiesRouteImport } from './routes/_authenticated/_app/opportunities'
+import { Route as AuthenticatedAppFinancingRouteImport } from './routes/_authenticated/_app/financing'
+import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated/_app/dashboard'
+import { Route as AuthenticatedAppCostMonitorRouteImport } from './routes/_authenticated/_app/cost-monitor'
+import { Route as AuthenticatedAppContractsRouteImport } from './routes/_authenticated/_app/contracts'
+import { Route as AuthenticatedAppCashFlowRouteImport } from './routes/_authenticated/_app/cash-flow'
+import { Route as AuthenticatedAppBusinessHealthRouteImport } from './routes/_authenticated/_app/business-health'
+import { Route as AuthenticatedAppBalanceSheetsRouteImport } from './routes/_authenticated/_app/balance-sheets'
+import { Route as AuthenticatedAppAiConsultantRouteImport } from './routes/_authenticated/_app/ai-consultant'
+import { Route as AuthenticatedAppAccountingRouteImport } from './routes/_authenticated/_app/accounting'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAppTaxCalendarRoute =
+  AuthenticatedAppTaxCalendarRouteImport.update({
+    id: '/tax-calendar',
+    path: '/tax-calendar',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSimulationsRoute =
+  AuthenticatedAppSimulationsRouteImport.update({
+    id: '/simulations',
+    path: '/simulations',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppOpportunitiesRoute =
+  AuthenticatedAppOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFinancingRoute =
+  AuthenticatedAppFinancingRouteImport.update({
+    id: '/financing',
+    path: '/financing',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDashboardRoute =
+  AuthenticatedAppDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCostMonitorRoute =
+  AuthenticatedAppCostMonitorRouteImport.update({
+    id: '/cost-monitor',
+    path: '/cost-monitor',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppContractsRoute =
+  AuthenticatedAppContractsRouteImport.update({
+    id: '/contracts',
+    path: '/contracts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCashFlowRoute =
+  AuthenticatedAppCashFlowRouteImport.update({
+    id: '/cash-flow',
+    path: '/cash-flow',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppBusinessHealthRoute =
+  AuthenticatedAppBusinessHealthRouteImport.update({
+    id: '/business-health',
+    path: '/business-health',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppBalanceSheetsRoute =
+  AuthenticatedAppBalanceSheetsRouteImport.update({
+    id: '/balance-sheets',
+    path: '/balance-sheets',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAiConsultantRoute =
+  AuthenticatedAppAiConsultantRouteImport.update({
+    id: '/ai-consultant',
+    path: '/ai-consultant',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAccountingRoute =
+  AuthenticatedAppAccountingRouteImport.update({
+    id: '/accounting',
+    path: '/accounting',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/accounting': typeof AuthenticatedAppAccountingRoute
+  '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
+  '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
+  '/business-health': typeof AuthenticatedAppBusinessHealthRoute
+  '/cash-flow': typeof AuthenticatedAppCashFlowRoute
+  '/contracts': typeof AuthenticatedAppContractsRoute
+  '/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/financing': typeof AuthenticatedAppFinancingRoute
+  '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/settings': typeof AuthenticatedAppSettingsRoute
+  '/simulations': typeof AuthenticatedAppSimulationsRoute
+  '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/accounting': typeof AuthenticatedAppAccountingRoute
+  '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
+  '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
+  '/business-health': typeof AuthenticatedAppBusinessHealthRoute
+  '/cash-flow': typeof AuthenticatedAppCashFlowRoute
+  '/contracts': typeof AuthenticatedAppContractsRoute
+  '/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/financing': typeof AuthenticatedAppFinancingRoute
+  '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/settings': typeof AuthenticatedAppSettingsRoute
+  '/simulations': typeof AuthenticatedAppSimulationsRoute
+  '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/_app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/_app/accounting': typeof AuthenticatedAppAccountingRoute
+  '/_authenticated/_app/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
+  '/_authenticated/_app/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
+  '/_authenticated/_app/business-health': typeof AuthenticatedAppBusinessHealthRoute
+  '/_authenticated/_app/cash-flow': typeof AuthenticatedAppCashFlowRoute
+  '/_authenticated/_app/contracts': typeof AuthenticatedAppContractsRoute
+  '/_authenticated/_app/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/_authenticated/_app/dashboard': typeof AuthenticatedAppDashboardRoute
+  '/_authenticated/_app/financing': typeof AuthenticatedAppFinancingRoute
+  '/_authenticated/_app/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/_authenticated/_app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/_app/simulations': typeof AuthenticatedAppSimulationsRoute
+  '/_authenticated/_app/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/accounting'
+    | '/ai-consultant'
+    | '/balance-sheets'
+    | '/business-health'
+    | '/cash-flow'
+    | '/contracts'
+    | '/cost-monitor'
+    | '/dashboard'
+    | '/financing'
+    | '/opportunities'
+    | '/settings'
+    | '/simulations'
+    | '/tax-calendar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/accounting'
+    | '/ai-consultant'
+    | '/balance-sheets'
+    | '/business-health'
+    | '/cash-flow'
+    | '/contracts'
+    | '/cost-monitor'
+    | '/dashboard'
+    | '/financing'
+    | '/opportunities'
+    | '/settings'
+    | '/simulations'
+    | '/tax-calendar'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/_app'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/_app/accounting'
+    | '/_authenticated/_app/ai-consultant'
+    | '/_authenticated/_app/balance-sheets'
+    | '/_authenticated/_app/business-health'
+    | '/_authenticated/_app/cash-flow'
+    | '/_authenticated/_app/contracts'
+    | '/_authenticated/_app/cost-monitor'
+    | '/_authenticated/_app/dashboard'
+    | '/_authenticated/_app/financing'
+    | '/_authenticated/_app/opportunities'
+    | '/_authenticated/_app/settings'
+    | '/_authenticated/_app/simulations'
+    | '/_authenticated/_app/tax-calendar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +275,168 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_app': {
+      id: '/_authenticated/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_app/tax-calendar': {
+      id: '/_authenticated/_app/tax-calendar'
+      path: '/tax-calendar'
+      fullPath: '/tax-calendar'
+      preLoaderRoute: typeof AuthenticatedAppTaxCalendarRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/simulations': {
+      id: '/_authenticated/_app/simulations'
+      path: '/simulations'
+      fullPath: '/simulations'
+      preLoaderRoute: typeof AuthenticatedAppSimulationsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/settings': {
+      id: '/_authenticated/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/opportunities': {
+      id: '/_authenticated/_app/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof AuthenticatedAppOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/financing': {
+      id: '/_authenticated/_app/financing'
+      path: '/financing'
+      fullPath: '/financing'
+      preLoaderRoute: typeof AuthenticatedAppFinancingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/dashboard': {
+      id: '/_authenticated/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedAppDashboardRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/cost-monitor': {
+      id: '/_authenticated/_app/cost-monitor'
+      path: '/cost-monitor'
+      fullPath: '/cost-monitor'
+      preLoaderRoute: typeof AuthenticatedAppCostMonitorRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/contracts': {
+      id: '/_authenticated/_app/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedAppContractsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/cash-flow': {
+      id: '/_authenticated/_app/cash-flow'
+      path: '/cash-flow'
+      fullPath: '/cash-flow'
+      preLoaderRoute: typeof AuthenticatedAppCashFlowRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/business-health': {
+      id: '/_authenticated/_app/business-health'
+      path: '/business-health'
+      fullPath: '/business-health'
+      preLoaderRoute: typeof AuthenticatedAppBusinessHealthRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/balance-sheets': {
+      id: '/_authenticated/_app/balance-sheets'
+      path: '/balance-sheets'
+      fullPath: '/balance-sheets'
+      preLoaderRoute: typeof AuthenticatedAppBalanceSheetsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/ai-consultant': {
+      id: '/_authenticated/_app/ai-consultant'
+      path: '/ai-consultant'
+      fullPath: '/ai-consultant'
+      preLoaderRoute: typeof AuthenticatedAppAiConsultantRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/accounting': {
+      id: '/_authenticated/_app/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AuthenticatedAppAccountingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAccountingRoute: typeof AuthenticatedAppAccountingRoute
+  AuthenticatedAppAiConsultantRoute: typeof AuthenticatedAppAiConsultantRoute
+  AuthenticatedAppBalanceSheetsRoute: typeof AuthenticatedAppBalanceSheetsRoute
+  AuthenticatedAppBusinessHealthRoute: typeof AuthenticatedAppBusinessHealthRoute
+  AuthenticatedAppCashFlowRoute: typeof AuthenticatedAppCashFlowRoute
+  AuthenticatedAppContractsRoute: typeof AuthenticatedAppContractsRoute
+  AuthenticatedAppCostMonitorRoute: typeof AuthenticatedAppCostMonitorRoute
+  AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
+  AuthenticatedAppFinancingRoute: typeof AuthenticatedAppFinancingRoute
+  AuthenticatedAppOpportunitiesRoute: typeof AuthenticatedAppOpportunitiesRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSimulationsRoute: typeof AuthenticatedAppSimulationsRoute
+  AuthenticatedAppTaxCalendarRoute: typeof AuthenticatedAppTaxCalendarRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAccountingRoute: AuthenticatedAppAccountingRoute,
+  AuthenticatedAppAiConsultantRoute: AuthenticatedAppAiConsultantRoute,
+  AuthenticatedAppBalanceSheetsRoute: AuthenticatedAppBalanceSheetsRoute,
+  AuthenticatedAppBusinessHealthRoute: AuthenticatedAppBusinessHealthRoute,
+  AuthenticatedAppCashFlowRoute: AuthenticatedAppCashFlowRoute,
+  AuthenticatedAppContractsRoute: AuthenticatedAppContractsRoute,
+  AuthenticatedAppCostMonitorRoute: AuthenticatedAppCostMonitorRoute,
+  AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
+  AuthenticatedAppFinancingRoute: AuthenticatedAppFinancingRoute,
+  AuthenticatedAppOpportunitiesRoute: AuthenticatedAppOpportunitiesRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSimulationsRoute: AuthenticatedAppSimulationsRoute,
+  AuthenticatedAppTaxCalendarRoute: AuthenticatedAppTaxCalendarRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
