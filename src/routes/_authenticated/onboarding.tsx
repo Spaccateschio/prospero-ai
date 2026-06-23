@@ -31,10 +31,17 @@ import { cn } from "@/lib/utils";
 import { useActiveCompany, useCreateCompany } from "@/hooks/use-companies";
 import { useProfile } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AnagraficaForm, emptyAnagrafica,
+  type AnagraficaValues, type FieldSources,
+} from "@/components/company/anagrafica-form";
+import { useServerFn } from "@tanstack/react-start";
+import { saveCompanyAnagrafica } from "@/lib/anagrafica.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: OnboardingWizard,
 });
+
 
 const ITALIAN_REGIONS = [
   "Abruzzo", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli-Venezia Giulia",
