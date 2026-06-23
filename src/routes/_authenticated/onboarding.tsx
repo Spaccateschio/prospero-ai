@@ -210,6 +210,9 @@ function OnboardingWizard() {
                     provider: provider ?? d.provider,
                   }))
                 }
+                onProvider={(provider) =>
+                  setData((d) => ({ ...d, provider }))
+                }
                 onNext={() => {
                   const a = data.anagrafica;
                   if (!a.name.trim()) {
