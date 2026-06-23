@@ -117,6 +117,16 @@ function OnboardingWizard() {
   const navigate = useNavigate();
   const { companies, isLoading } = useActiveCompany();
   const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  const goToStep = (n: number) => {
+    if (n < 1 || n > STEPS.length) return;
+    if (n > maxStep) return;
+    setStep(n);
+  };
+  const advanceTo = (n: number) => {
+    setStep(n);
+    setMaxStep((m) => Math.max(m, n));
+  };
   const [data, setData] = useState<WizardData>({
     anagrafica: emptyAnagrafica(),
     sources: {},
@@ -170,32 +180,42 @@ function OnboardingWizard() {
 
         <div className="grid gap-8 md:grid-cols-[220px_1fr]">
           <ol className="space-y-3 text-sm">
-            {STEPS.map((s) => (
-              <li
-                key={s.id}
-                className={cn(
-                  "flex gap-3 rounded-md p-2",
-                  step === s.id && "bg-accent text-accent-foreground",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs",
-                    s.id < step
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : step === s.id
-                      ? "border-primary text-primary"
-                      : "border-muted text-muted-foreground",
-                  )}
-                >
-                  {s.id < step ? <Check className="h-3 w-3" /> : s.id}
-                </div>
-                <div className="leading-tight">
-                  <div className="font-medium">{s.title}</div>
-                  <div className="text-xs text-muted-foreground">{s.description}</div>
-                </div>
-              </li>
-            ))}
+            {STEPS.map((s) => {
+              const reachable = s.id <= maxStep;
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onClick={() => goToStep(s.id)}
+                    disabled={!reachable}
+                    className={cn(
+                      "flex w-full gap-3 rounded-md p-2 text-left transition-colors",
+                      step === s.id && "bg-accent text-accent-foreground",
+                      reachable
+                        ? "hover:bg-accent/60 cursor-pointer"
+                        : "cursor-not-allowed opacity-60",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs",
+                        s.id < step
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : step === s.id
+                          ? "border-primary text-primary"
+                          : "border-muted text-muted-foreground",
+                      )}
+                    >
+                      {s.id < step ? <Check className="h-3 w-3" /> : s.id}
+                    </div>
+                    <div className="leading-tight">
+                      <div className="font-medium">{s.title}</div>
+                      <div className="text-xs text-muted-foreground">{s.description}</div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ol>
 
           <div>
@@ -239,7 +259,7 @@ function OnboardingWizard() {
                     toast.error("Seleziona la regione");
                     return;
                   }
-                  setStep(2);
+                  advanceTo(2);
                 }}
               />
             )}
@@ -301,7 +321,7 @@ function OnboardingWizard() {
                       console.warn("saveCompanyAnagrafica failed", err);
                     }
 
-                    setStep(3);
+                    advanceTo(3);
                   } catch (err: unknown) {
                     console.error("[onboarding] createCompany failed", err);
                     const e = err as { message?: string; details?: string; hint?: string; code?: string } | null;
@@ -316,9 +336,9 @@ function OnboardingWizard() {
               />
             )}
 
-            {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-            {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => setStep(5)} />}
-            {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => setStep(6)} />}
+            {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => advanceTo(4)} />}
+            {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => advanceTo(5)} />}
+            {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => advanceTo(6)} />}
             {step === 6 && (
               <Step6
                 defaults={data}
@@ -336,7 +356,7 @@ function OnboardingWizard() {
                     }
                   }
                   setData((d) => ({ ...d, ...values }));
-                  setStep(7);
+                  advanceTo(7);
                 }}
               />
             )}
