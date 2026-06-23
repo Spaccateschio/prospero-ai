@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 import { lookupVatNumber } from "@/lib/vat-lookup.functions";
 import type { NormalizedCompanyData, VatLookupResult } from "@/lib/vat-lookup.functions";
-import { extractVisuraData } from "@/lib/visura-extraction.functions";
+import { extractVisuraData, type VisuraExtras } from "@/lib/visura-extraction.functions";
 
 export type AnagraficaValues = {
   name: string;
