@@ -169,11 +169,12 @@ export type AnagraficaFormProps = {
   sources: FieldSources;
   onChange: (values: AnagraficaValues, sources: FieldSources) => void;
   onVerified?: (provider: string) => void;
+  onExtras?: (extras: VisuraExtras) => void;
   /** Mostra solo i campi essenziali (per onboarding step rapido) */
   compact?: boolean;
 };
 
-export function AnagraficaForm({ values, sources, onChange, onVerified, compact = false }: AnagraficaFormProps) {
+export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
   const extractVisura = useServerFn(extractVisuraData);
   const [verifying, setVerifying] = useState(false);
