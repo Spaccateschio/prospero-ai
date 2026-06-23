@@ -76,7 +76,10 @@ Schema atteso:
   "legal_address_street": "string (via e numero civico)",
   "city": "string (comune)",
   "province": "string (sigla provincia, 2 lettere maiuscole, es. RM)",
-  "zip_code": "string (CAP, 5 cifre)"
+  "zip_code": "string (CAP, 5 cifre)",
+  "founded_year": "number (anno di costituzione/fondazione, es. 2012) o null",
+  "employees_count": "number (numero dipendenti / addetti se presente, es. dalla sezione 'Numero addetti' o 'Dipendenti') o null",
+  "iso_certifications": "array di stringhe tra: iso_9001, iso_14001, iso_45001, iso_50001, iso_27001 (solo se esplicitamente citate nella visura, altrimenti [])"
 }`;
 
     try {
