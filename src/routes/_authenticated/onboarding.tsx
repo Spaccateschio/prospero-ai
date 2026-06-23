@@ -127,9 +127,15 @@ function OnboardingWizard() {
   const navigate = useNavigate();
   const { companies, isLoading } = useActiveCompany();
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<WizardData>({ iso_certifications: [] });
+  const [data, setData] = useState<WizardData>({
+    anagrafica: emptyAnagrafica(),
+    sources: {},
+    provider: null,
+    iso_certifications: [],
+  });
   const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
   const createCompany = useCreateCompany();
+  const persistAnagrafica = useServerFn(saveCompanyAnagrafica);
 
   // Se c'è già un'azienda e l'utente non l'ha appena creata, vai alla dashboard
   useEffect(() => {
@@ -155,7 +161,7 @@ function OnboardingWizard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Wallet className="h-4 w-4" />
           </div>
@@ -169,7 +175,7 @@ function OnboardingWizard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-6 py-8">
         <Progress value={(step / STEPS.length) * 100} className="mb-8 h-1.5" />
 
         <div className="grid gap-8 md:grid-cols-[220px_1fr]">
@@ -205,9 +211,23 @@ function OnboardingWizard() {
           <div>
             {step === 1 && (
               <Step1
-                defaults={data}
-                onNext={async (values) => {
-                  setData((d) => ({ ...d, ...values }));
+                values={data.anagrafica}
+                sources={data.sources}
+                regimeFiscale={data.regime_fiscale}
+                onChange={(anagrafica, sources, provider) =>
+                  setData((d) => ({
+                    ...d,
+                    anagrafica,
+                    sources,
+                    provider: provider ?? d.provider,
+                  }))
+                }
+                onChangeRegime={(rf) => setData((d) => ({ ...d, regime_fiscale: rf }))}
+                onNext={() => {
+                  if (!data.anagrafica.name.trim()) {
+                    toast.error("Inserisci almeno il nome dell'azienda");
+                    return;
+                  }
                   setStep(2);
                 }}
               />
@@ -218,27 +238,58 @@ function OnboardingWizard() {
                 onBack={() => setStep(1)}
                 pending={createCompany.isPending}
                 onNext={async (values) => {
-                  const merged = { ...data, ...values };
+                  const merged: WizardData = { ...data, ...values, iso_certifications: values.iso_certifications ?? [] };
                   setData(merged);
-                  // Crea l'azienda alla fine dello step 2
                   try {
+                    const a = merged.anagrafica;
                     const company = await createCompany.mutateAsync({
-                      name: merged.name!,
-                      legal_name: merged.legal_name || undefined,
-                      vat: merged.vat || undefined,
-                      ateco: merged.ateco || undefined,
-                      sector: merged.sector || undefined,
-                      region: merged.region || undefined,
-                      province: merged.province || undefined,
-                      city: merged.city || undefined,
+                      name: a.name,
+                      legal_name: a.legal_name || undefined,
+                      vat: a.vat || undefined,
+                      ateco: a.ateco || undefined,
+                      sector: a.sector || undefined,
+                      region: a.region || undefined,
+                      province: a.province || undefined,
+                      city: a.city || undefined,
                       regime_fiscale: merged.regime_fiscale,
-                      company_type: merged.company_type,
+                      company_type: (a.company_type || undefined) as
+                        | "srl" | "srls" | "spa" | "sapa" | "snc" | "sas"
+                        | "ditta_individuale" | "cooperativa" | "altro" | undefined,
                       founded_year: merged.founded_year,
                       employees_count: merged.employees_count,
                       annual_revenue: merged.annual_revenue,
-                      iso_certifications: merged.iso_certifications ?? [],
+                      iso_certifications: merged.iso_certifications,
                     });
                     setCreatedCompanyId(company.id);
+
+                    // Salva campi anagrafici estesi (PEC, SDI, REA, ATECO desc, ecc.) + sources
+                    try {
+                      await persistAnagrafica({
+                        data: {
+                          company_id: company.id,
+                          values: {
+                            fiscal_code: a.fiscal_code || null,
+                            legal_form: a.legal_form || null,
+                            ateco_description: a.ateco_description || null,
+                            pec_email: a.pec_email || null,
+                            sdi_code: a.sdi_code || null,
+                            rea_code: a.rea_code || null,
+                            chamber_of_commerce: a.chamber_of_commerce || null,
+                            activity_status: a.activity_status || null,
+                            activity_start_date: a.activity_start_date || null,
+                            legal_address_street: a.legal_address_street || null,
+                            zip_code: a.zip_code || null,
+                          },
+                          sources: merged.sources,
+                          provider: merged.provider ?? undefined,
+                          mark_verified: Object.values(merged.sources).some((s) => s === "external"),
+                        },
+                      });
+                    } catch (err) {
+                      // Non-bloccante: l'azienda è già creata
+                      console.warn("saveCompanyAnagrafica failed", err);
+                    }
+
                     setStep(3);
                   } catch (err) {
                     toast.error("Errore creazione azienda", {
@@ -248,6 +299,7 @@ function OnboardingWizard() {
                 }}
               />
             )}
+
             {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => setStep(4)} />}
             {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => setStep(5)} />}
             {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => setStep(6)} />}
