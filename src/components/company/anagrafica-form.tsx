@@ -176,10 +176,10 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
   const lookup = useServerFn(lookupVatNumber);
   const [verifying, setVerifying] = useState(false);
   const [lastResult, setLastResult] = useState<VatLookupResult | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   function update<K extends keyof AnagraficaValues>(key: K, value: AnagraficaValues[K]) {
     const nextSources = { ...sources };
-    // Se l'utente modifica un campo verificato, diventa "user"
     if (nextSources[key] === "external") nextSources[key] = "user";
     else if (!nextSources[key] && value) nextSources[key] = "user";
     onChange({ ...values, [key]: value }, nextSources);
@@ -199,17 +199,24 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
         const { values: merged, sources: mergedSources } = applyVerifiedData(values, sources, result.data);
         onChange(merged, mergedSources);
         onVerified?.(result.provider);
+        setAdvancedOpen(true);
         toast.success(`Dati compilati da ${result.provider}`, {
-          description: `${result.verifiedFields.length} campi precompilati`,
+          description: `${result.verifiedFields.length} campi precompilati — rivedi i dati avanzati`,
         });
       } else if (result.status === "not_found") {
-        toast.warning("Partita IVA non trovata", { description: result.message });
+        toast.warning("Partita IVA non trovata", {
+          description: "Puoi proseguire compilando manualmente i dati essenziali.",
+        });
       } else {
-        toast.error("Verifica fallita", { description: result.message });
+        toast.error("Verifica non disponibile", {
+          description: `${result.message} Puoi proseguire compilando manualmente.`,
+        });
       }
     } catch (err) {
-      toast.error("Errore durante la verifica", {
-        description: err instanceof Error ? err.message : "Imprevisto",
+      toast.error("Verifica non disponibile", {
+        description: err instanceof Error
+          ? `${err.message} — puoi proseguire compilando manualmente.`
+          : "Imprevisto — puoi proseguire compilando manualmente.",
       });
     } finally {
       setVerifying(false);
@@ -221,10 +228,10 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
       {/* Verifica P.IVA */}
       <div className="rounded-lg border bg-muted/30 p-4">
         <div className="mb-3">
-          <h4 className="text-sm font-semibold">Verifica automatica</h4>
+          <h4 className="text-sm font-semibold">Verifica automatica (consigliata)</h4>
           <p className="text-xs text-muted-foreground">
-            Inserisci la Partita IVA: proveremo a compilare automaticamente ragione sociale, sede, ATECO, PEC,
-            REA e altri dati dal Registro Imprese.
+            Inserisci la Partita IVA: compileremo automaticamente ragione sociale, sede, ATECO, PEC,
+            REA e gli altri dati dal Registro Imprese.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -249,20 +256,20 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
             <ShieldAlert className="h-4 w-4 text-amber-400" />
             <AlertTitle className="text-amber-300">Verifica automatica non riuscita</AlertTitle>
             <AlertDescription className="text-xs text-amber-200/80">
-              {lastResult.message} Puoi comunque compilare i dati manualmente qui sotto.
+              Nessun problema: puoi proseguire compilando manualmente i campi essenziali qui sotto.
             </AlertDescription>
           </Alert>
         )}
       </div>
 
-      {/* Dati anagrafici */}
+      {/* Campi essenziali — sempre visibili */}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextFieldWithSource name="name" label="Nome commerciale *" values={values} sources={sources} onChange={update} placeholder="Mario Rossi SRL" className="sm:col-span-2" />
         <TextFieldWithSource name="legal_name" label="Ragione sociale" values={values} sources={sources} onChange={update} />
 
         <div className="space-y-1.5">
           <Label className="flex items-center text-xs">
-            Forma giuridica
+            Forma giuridica *
             <SourceBadge source={sources.company_type ?? sources.legal_form} />
           </Label>
           <Select value={values.company_type || ""} onValueChange={(v) => update("company_type", (v as AnagraficaValues["company_type"]) || "")}>
@@ -273,65 +280,85 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
           </Select>
         </div>
 
-        <TextFieldWithSource name="fiscal_code" label="Codice fiscale azienda" values={values} sources={sources} onChange={update} />
-        <TextFieldWithSource name="legal_form" label="Forma giuridica (testuale)" values={values} sources={sources} onChange={update} placeholder="es. SOCIETA' A RESPONSABILITA' LIMITATA" />
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label className="flex items-center text-xs">
+            Regione *
+            <SourceBadge source={sources.region} />
+          </Label>
+          <Select value={values.region} onValueChange={(v) => update("region", v)}>
+            <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+            <SelectContent>
+              {ITALIAN_REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
+      {/* Dati avanzati — collassabili */}
       {!compact && (
-        <>
-          <div>
-            <h4 className="mb-3 text-sm font-semibold">Attività e classificazione</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextFieldWithSource name="ateco" label="Codice ATECO" values={values} sources={sources} onChange={update} placeholder="62.01.00" />
-              <TextFieldWithSource name="sector" label="Settore" values={values} sources={sources} onChange={update} placeholder="Servizi IT" />
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label className="flex items-center text-xs">
-                  Descrizione attività ATECO
-                  <SourceBadge source={sources.ateco_description} />
-                </Label>
-                <Textarea
-                  rows={2}
-                  value={values.ateco_description}
-                  onChange={(e) => update("ateco_description", e.target.value)}
-                />
-              </div>
-              <TextFieldWithSource name="activity_status" label="Stato attività" values={values} sources={sources} onChange={update} placeholder="ATTIVA" />
-              <TextFieldWithSource name="activity_start_date" label="Data inizio attività" type="date" values={values} sources={sources} onChange={update} />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="mb-3 text-sm font-semibold">Sede legale</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextFieldWithSource name="legal_address_street" label="Via / Indirizzo" values={values} sources={sources} onChange={update} className="sm:col-span-2" />
-              <TextFieldWithSource name="city" label="Città" values={values} sources={sources} onChange={update} />
-              <TextFieldWithSource name="zip_code" label="CAP" values={values} sources={sources} onChange={update} />
-              <TextFieldWithSource name="province" label="Provincia" values={values} sources={sources} onChange={update} placeholder="MI" />
-              <div className="space-y-1.5">
-                <Label className="flex items-center text-xs">
-                  Regione
-                  <SourceBadge source={sources.region} />
-                </Label>
-                <Select value={values.region} onValueChange={(v) => update("region", v)}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger>
-                  <SelectContent>
-                    {ITALIAN_REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="outline" className="w-full justify-between">
+              <span className="text-sm">
+                Dati avanzati (opzionali)
+                <span className="ml-2 text-xs text-muted-foreground">
+                  CF, ATECO, sede legale, PEC/SDI, REA
+                </span>
+              </span>
+              <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-6">
+            <div>
+              <h4 className="mb-3 text-sm font-semibold">Identificativi fiscali</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextFieldWithSource name="fiscal_code" label="Codice fiscale azienda" values={values} sources={sources} onChange={update} />
+                <TextFieldWithSource name="legal_form" label="Forma giuridica (testuale)" values={values} sources={sources} onChange={update} placeholder="es. SOCIETA' A RESPONSABILITA' LIMITATA" />
               </div>
             </div>
-          </div>
 
-          <div>
-            <h4 className="mb-3 text-sm font-semibold">Fatturazione elettronica e Camera di Commercio</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextFieldWithSource name="pec_email" label="PEC" values={values} sources={sources} onChange={update} placeholder="azienda@pec.it" />
-              <TextFieldWithSource name="sdi_code" label="Codice destinatario SDI" values={values} sources={sources} onChange={update} placeholder="XXXXXXX" />
-              <TextFieldWithSource name="rea_code" label="Codice REA" values={values} sources={sources} onChange={update} placeholder="MI-1234567" />
-              <TextFieldWithSource name="chamber_of_commerce" label="Camera di Commercio" values={values} sources={sources} onChange={update} placeholder="Milano Monza Brianza Lodi" />
+            <div>
+              <h4 className="mb-3 text-sm font-semibold">Attività e classificazione</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextFieldWithSource name="ateco" label="Codice ATECO" values={values} sources={sources} onChange={update} placeholder="62.01.00" />
+                <TextFieldWithSource name="sector" label="Settore" values={values} sources={sources} onChange={update} placeholder="Servizi IT" />
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="flex items-center text-xs">
+                    Descrizione attività ATECO
+                    <SourceBadge source={sources.ateco_description} />
+                  </Label>
+                  <Textarea
+                    rows={2}
+                    value={values.ateco_description}
+                    onChange={(e) => update("ateco_description", e.target.value)}
+                  />
+                </div>
+                <TextFieldWithSource name="activity_status" label="Stato attività" values={values} sources={sources} onChange={update} placeholder="ATTIVA" />
+                <TextFieldWithSource name="activity_start_date" label="Data inizio attività" type="date" values={values} sources={sources} onChange={update} />
+              </div>
             </div>
-          </div>
-        </>
+
+            <div>
+              <h4 className="mb-3 text-sm font-semibold">Sede legale</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextFieldWithSource name="legal_address_street" label="Via / Indirizzo" values={values} sources={sources} onChange={update} className="sm:col-span-2" />
+                <TextFieldWithSource name="city" label="Città" values={values} sources={sources} onChange={update} />
+                <TextFieldWithSource name="zip_code" label="CAP" values={values} sources={sources} onChange={update} />
+                <TextFieldWithSource name="province" label="Provincia" values={values} sources={sources} onChange={update} placeholder="MI" />
+              </div>
+            </div>
+
+            <div>
+              <h4 className="mb-3 text-sm font-semibold">Fatturazione elettronica e Camera di Commercio</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TextFieldWithSource name="pec_email" label="PEC" values={values} sources={sources} onChange={update} placeholder="azienda@pec.it" />
+                <TextFieldWithSource name="sdi_code" label="Codice destinatario SDI" values={values} sources={sources} onChange={update} placeholder="XXXXXXX" />
+                <TextFieldWithSource name="rea_code" label="Codice REA" values={values} sources={sources} onChange={update} placeholder="MI-1234567" />
+                <TextFieldWithSource name="chamber_of_commerce" label="Camera di Commercio" values={values} sources={sources} onChange={update} placeholder="Milano Monza Brianza Lodi" />
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
