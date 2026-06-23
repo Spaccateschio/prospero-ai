@@ -185,7 +185,12 @@ export const recordInvoicePayment = createServerFn({ method: "POST" })
     const newPaid = Math.min(total, previouslyPaid + data.amount);
     const reachedFull = newPaid >= total - 0.005;
 
-    const update: Record<string, unknown> = {
+    const update: {
+      paid_amount: number;
+      status: "paid" | "partially_paid";
+      paid_date?: string;
+      payment_method?: string;
+    } = {
       paid_amount: newPaid,
       status: reachedFull ? "paid" : "partially_paid",
     };
