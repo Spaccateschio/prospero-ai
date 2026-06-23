@@ -117,6 +117,16 @@ function OnboardingWizard() {
   const navigate = useNavigate();
   const { companies, isLoading } = useActiveCompany();
   const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  const goToStep = (n: number) => {
+    if (n < 1 || n > STEPS.length) return;
+    if (n > maxStep) return;
+    setStep(n);
+  };
+  const advanceTo = (n: number) => {
+    setStep(n);
+    setMaxStep((m) => Math.max(m, n));
+  };
   const [data, setData] = useState<WizardData>({
     anagrafica: emptyAnagrafica(),
     sources: {},
