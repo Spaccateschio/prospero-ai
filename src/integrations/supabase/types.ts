@@ -379,83 +379,216 @@ export type Database = {
       companies: {
         Row: {
           accountant_approval_timeout_hours: number
+          activity_start_date: string | null
+          activity_status: string | null
           annual_revenue: number | null
           ateco: string | null
+          ateco_description: string | null
+          chamber_of_commerce: string | null
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"] | null
           created_at: string
           created_by: string
+          data_source: string
           employees_count: number | null
           fiscal_code: string | null
           founded_year: number | null
           id: string
           iso_certifications: Json
           iva_frequency: Database["public"]["Enums"]["iva_frequency"] | null
+          last_verified_at: string | null
+          legal_address_street: string | null
+          legal_form: string | null
           legal_name: string | null
           logo_url: string | null
           name: string
+          pec_email: string | null
           province: string | null
+          rea_code: string | null
           regime_fiscale: Database["public"]["Enums"]["regime_fiscale"] | null
           region: string | null
           require_accountant_approval: boolean
+          sdi_code: string | null
           sector: string | null
           updated_at: string
           vat: string | null
+          verification_provider: string | null
           zip_code: string | null
         }
         Insert: {
           accountant_approval_timeout_hours?: number
+          activity_start_date?: string | null
+          activity_status?: string | null
           annual_revenue?: number | null
           ateco?: string | null
+          ateco_description?: string | null
+          chamber_of_commerce?: string | null
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
           created_by: string
+          data_source?: string
           employees_count?: number | null
           fiscal_code?: string | null
           founded_year?: number | null
           id?: string
           iso_certifications?: Json
           iva_frequency?: Database["public"]["Enums"]["iva_frequency"] | null
+          last_verified_at?: string | null
+          legal_address_street?: string | null
+          legal_form?: string | null
           legal_name?: string | null
           logo_url?: string | null
           name: string
+          pec_email?: string | null
           province?: string | null
+          rea_code?: string | null
           regime_fiscale?: Database["public"]["Enums"]["regime_fiscale"] | null
           region?: string | null
           require_accountant_approval?: boolean
+          sdi_code?: string | null
           sector?: string | null
           updated_at?: string
           vat?: string | null
+          verification_provider?: string | null
           zip_code?: string | null
         }
         Update: {
           accountant_approval_timeout_hours?: number
+          activity_start_date?: string | null
+          activity_status?: string | null
           annual_revenue?: number | null
           ateco?: string | null
+          ateco_description?: string | null
+          chamber_of_commerce?: string | null
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
           created_by?: string
+          data_source?: string
           employees_count?: number | null
           fiscal_code?: string | null
           founded_year?: number | null
           id?: string
           iso_certifications?: Json
           iva_frequency?: Database["public"]["Enums"]["iva_frequency"] | null
+          last_verified_at?: string | null
+          legal_address_street?: string | null
+          legal_form?: string | null
           legal_name?: string | null
           logo_url?: string | null
           name?: string
+          pec_email?: string | null
           province?: string | null
+          rea_code?: string | null
           regime_fiscale?: Database["public"]["Enums"]["regime_fiscale"] | null
           region?: string | null
           require_accountant_approval?: boolean
+          sdi_code?: string | null
           sector?: string | null
           updated_at?: string
           vat?: string | null
+          verification_provider?: string | null
           zip_code?: string | null
         }
         Relationships: []
+      }
+      company_documents: {
+        Row: {
+          company_id: string
+          created_at: string
+          doc_type: string
+          document_date: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          notes: string | null
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          doc_type: string
+          document_date?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_path: string
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          doc_type?: string
+          document_date?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_field_sources: {
+        Row: {
+          company_id: string
+          created_at: string
+          field_name: string
+          id: string
+          provider: string | null
+          source: string
+          updated_at: string
+          updated_by: string | null
+          verified_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          provider?: string | null
+          source: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          provider?: string | null
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_field_sources_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_grants: {
         Row: {
@@ -545,6 +678,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_verifications: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          provider: string
+          raw_response: Json | null
+          requested_by: string
+          status: string
+          vat_queried: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          provider: string
+          raw_response?: Json | null
+          requested_by: string
+          status: string
+          vat_queried: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          provider?: string
+          raw_response?: Json | null
+          requested_by?: string
+          status?: string
+          vat_queried?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_verifications_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
