@@ -369,124 +369,52 @@ function SkipStep({ title, body, onBack, onNext }: { title: string; body: string
   );
 }
 
-function Step1({ defaults, onNext }: { defaults: WizardData; onNext: (v: z.infer<typeof step1Schema>) => void }) {
-  const form = useForm<z.infer<typeof step1Schema>>({
-    resolver: zodResolver(step1Schema),
-    defaultValues: {
-      name: defaults.name ?? "",
-      legal_name: defaults.legal_name ?? "",
-      vat: defaults.vat ?? "",
-      ateco: defaults.ateco ?? "",
-      sector: defaults.sector ?? "",
-      region: defaults.region,
-      province: defaults.province ?? "",
-      city: defaults.city ?? "",
-      regime_fiscale: defaults.regime_fiscale,
-      company_type: defaults.company_type,
-    },
-  });
-
+function Step1({
+  values, sources, regimeFiscale, onChange, onChangeRegime, onNext,
+}: {
+  values: AnagraficaValues;
+  sources: FieldSources;
+  regimeFiscale: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined;
+  onChange: (anagrafica: AnagraficaValues, sources: FieldSources, provider?: string) => void;
+  onChangeRegime: (rf: "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined) => void;
+  onNext: () => void;
+}) {
   return (
-    <StepShell title="Crea la tua azienda" description="Inserisci i dati principali. Potrai modificarli in qualsiasi momento dalle Impostazioni.">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onNext)} className="grid gap-4 sm:grid-cols-2">
-          <FormField control={form.control} name="name" render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Nome azienda *</FormLabel>
-              <FormControl><Input placeholder="Mario Rossi SRL" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="legal_name" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ragione sociale</FormLabel>
-              <FormControl><Input placeholder="Mario Rossi Società a responsabilità limitata" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="company_type" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo società</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {COMPANY_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="vat" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Partita IVA</FormLabel>
-              <FormControl><Input placeholder="12345678901" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="ateco" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Codice ATECO</FormLabel>
-              <FormControl><Input placeholder="62.01.00" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="sector" render={({ field }) => (
-            <FormItem className="sm:col-span-2">
-              <FormLabel>Settore</FormLabel>
-              <FormControl><Input placeholder="Servizi IT, Ristorazione, Edilizia..." {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="region" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Regione</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {ITALIAN_REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="province" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Provincia</FormLabel>
-              <FormControl><Input placeholder="MI" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="city" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Città</FormLabel>
-              <FormControl><Input placeholder="Milano" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="regime_fiscale" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Regime fiscale</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleziona..." /></SelectTrigger></FormControl>
-                <SelectContent>
-                  <SelectItem value="ordinario">Ordinario</SelectItem>
-                  <SelectItem value="semplificato">Semplificato</SelectItem>
-                  <SelectItem value="forfettario">Forfettario</SelectItem>
-                  <SelectItem value="agricolo">Agricolo</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
+    <StepShell
+      title="Crea la tua azienda"
+      description="Inserisci la Partita IVA e proveremo a recuperare i dati ufficiali. Tutti i campi restano modificabili."
+    >
+      <div className="space-y-6">
+        <AnagraficaForm
+          values={values}
+          sources={sources}
+          onChange={(v, s) => onChange(v, s)}
+          onVerified={(provider) => onChange(values, sources, provider)}
+        />
 
-          <div className="sm:col-span-2 flex justify-end">
-            <Button type="submit">Continua <ChevronRight className="ml-1 h-4 w-4" /></Button>
-          </div>
-        </form>
-      </Form>
+        <div className="space-y-1.5">
+          <Label htmlFor="regime-fiscale" className="text-xs">Regime fiscale</Label>
+          <Select value={regimeFiscale ?? ""} onValueChange={(v) =>
+            onChangeRegime((v || undefined) as "ordinario" | "semplificato" | "forfettario" | "agricolo" | undefined)
+          }>
+            <SelectTrigger id="regime-fiscale"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ordinario">Ordinario</SelectItem>
+              <SelectItem value="semplificato">Semplificato</SelectItem>
+              <SelectItem value="forfettario">Forfettario</SelectItem>
+              <SelectItem value="agricolo">Agricolo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={onNext}>Continua <ChevronRight className="ml-1 h-4 w-4" /></Button>
+        </div>
+      </div>
     </StepShell>
   );
 }
+
 
 function Step2({ defaults, pending, onBack, onNext }: { defaults: WizardData; pending: boolean; onBack: () => void; onNext: (v: z.infer<typeof step2Schema>) => void }) {
   const form = useForm<z.infer<typeof step2Schema>>({
