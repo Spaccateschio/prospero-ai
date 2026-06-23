@@ -81,15 +81,19 @@ const step2Schema = z.object({
   employees_count: z.coerce.number().int().min(0).max(100000).optional(),
   annual_revenue: z.coerce.number().min(0).max(1_000_000_000_000).optional(),
   founded_year: z.coerce.number().int().min(1800).max(new Date().getFullYear()).optional(),
-  iso_certifications: z.array(z.string()).default([]),
+  iso_certifications: z.array(z.string()).optional(),
 });
 
 const step6Schema = z.object({
   iva_frequency: z.enum(["mensile", "trimestrale", "annuale"]),
 });
 
-type WizardData = z.infer<typeof step1Schema> &
-  z.infer<typeof step2Schema> & { iva_frequency?: "mensile" | "trimestrale" | "annuale" };
+type Step1Values = z.infer<typeof step1Schema>;
+type Step2Values = z.infer<typeof step2Schema>;
+type Step6Values = z.infer<typeof step6Schema>;
+
+type WizardData = Partial<Step1Values> &
+  Partial<Step2Values> & { iva_frequency?: "mensile" | "trimestrale" | "annuale" };
 
 const STEPS = [
   { id: 1, title: "Crea azienda", description: "Dati anagrafici e fiscali principali" },
