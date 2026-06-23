@@ -287,10 +287,15 @@ function OnboardingWizard() {
                     }
 
                     setStep(3);
-                  } catch (err) {
-                    toast.error("Errore creazione azienda", {
-                      description: err instanceof Error ? err.message : "Imprevisto",
-                    });
+                  } catch (err: unknown) {
+                    console.error("[onboarding] createCompany failed", err);
+                    const e = err as { message?: string; details?: string; hint?: string; code?: string } | null;
+                    const desc =
+                      (e?.message && `${e.message}${e.code ? ` (code ${e.code})` : ""}`) ||
+                      e?.details ||
+                      e?.hint ||
+                      (typeof err === "string" ? err : JSON.stringify(err));
+                    toast.error("Errore creazione azienda", { description: desc });
                   }
                 }}
               />
