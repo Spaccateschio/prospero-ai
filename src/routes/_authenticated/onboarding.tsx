@@ -259,7 +259,7 @@ function OnboardingWizard() {
                     toast.error("Seleziona la regione");
                     return;
                   }
-                  setStep(2);
+                  advanceTo(2);
                 }}
               />
             )}
@@ -321,7 +321,7 @@ function OnboardingWizard() {
                       console.warn("saveCompanyAnagrafica failed", err);
                     }
 
-                    setStep(3);
+                    advanceTo(3);
                   } catch (err: unknown) {
                     console.error("[onboarding] createCompany failed", err);
                     const e = err as { message?: string; details?: string; hint?: string; code?: string } | null;
@@ -336,9 +336,9 @@ function OnboardingWizard() {
               />
             )}
 
-            {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-            {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => setStep(5)} />}
-            {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => setStep(6)} />}
+            {step === 3 && <SkipStep title="Connetti il tuo conto bancario" body="Tramite Open Banking potrai sincronizzare automaticamente le movimentazioni. Lo configurerai più avanti dalle impostazioni." onBack={() => setStep(2)} onNext={() => advanceTo(4)} />}
+            {step === 4 && <SkipStep title="Importa i primi documenti" body="Potrai caricare fatture elettroniche, bilanci o estratti conto. Lo farai dal modulo Contabilità o Bilanci Storici." onBack={() => setStep(3)} onNext={() => advanceTo(5)} />}
+            {step === 5 && <SkipStep title="Invita il tuo commercialista" body="Potrai aggiungerlo dalle Impostazioni con un permesso configurabile e log di audit." onBack={() => setStep(4)} onNext={() => advanceTo(6)} />}
             {step === 6 && (
               <Step6
                 defaults={data}
@@ -356,7 +356,7 @@ function OnboardingWizard() {
                     }
                   }
                   setData((d) => ({ ...d, ...values }));
-                  setStep(7);
+                  advanceTo(7);
                 }}
               />
             )}
