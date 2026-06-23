@@ -193,7 +193,12 @@ export const markDeadlinePaid = createServerFn({ method: "POST" })
     if (!dl) throw new Error("Scadenza non trovata");
     if (dl.status === "cancelled") throw new Error("Scadenza annullata");
 
-    let update: Record<string, unknown>;
+    let update: {
+      due_date?: string;
+      status: "pending" | "paid";
+      paid_at: string | null;
+      actual_amount: number | null;
+    };
     if (dl.recurrence) {
       const freq = dl.recurrence as "monthly" | "quarterly" | "yearly";
       const nextDue = format(advanceDate(parseISO(dl.due_date as string), freq), "yyyy-MM-dd");
