@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ChevronDown, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
+import { CheckCircle2, ChevronDown, FileUp, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 import { lookupVatNumber } from "@/lib/vat-lookup.functions";
 import type { NormalizedCompanyData, VatLookupResult } from "@/lib/vat-lookup.functions";
+import { extractVisuraData } from "@/lib/visura-extraction.functions";
 
 export type AnagraficaValues = {
   name: string;
@@ -81,13 +82,14 @@ function applyVerifiedData(
   current: AnagraficaValues,
   current_sources: FieldSources,
   payload: NormalizedCompanyData,
+  source: FieldSource = "external",
 ): { values: AnagraficaValues; sources: FieldSources } {
   const merged: AnagraficaValues = { ...current };
   const sources: FieldSources = { ...current_sources };
   const setIf = (key: keyof AnagraficaValues, val: string | null | undefined) => {
     if (val && val.length > 0) {
       merged[key] = val as never;
-      sources[key] = "external";
+      sources[key] = source;
     }
   };
   setIf("vat", payload.vat);
@@ -107,10 +109,9 @@ function applyVerifiedData(
   setIf("province", payload.province);
   setIf("region", payload.region);
   setIf("zip_code", payload.zip_code);
-  // Se non c'è ancora un "name", usa la ragione sociale
   if (!merged.name && payload.legal_name) {
     merged.name = payload.legal_name;
-    sources.name = "external";
+    sources.name = source;
   }
   return { values: merged, sources };
 }
@@ -174,9 +175,12 @@ export type AnagraficaFormProps = {
 
 export function AnagraficaForm({ values, sources, onChange, onVerified, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
+  const extractVisura = useServerFn(extractVisuraData);
   const [verifying, setVerifying] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [lastResult, setLastResult] = useState<VatLookupResult | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   function update<K extends keyof AnagraficaValues>(key: K, value: AnagraficaValues[K]) {
     const nextSources = { ...sources };
@@ -223,6 +227,69 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
     }
   }
 
+  function inferCompanyType(legalForm: string | null | undefined): AnagraficaValues["company_type"] | null {
+    if (!legalForm) return null;
+    const s = legalForm.toLowerCase();
+    if (s.includes("s.r.l.s") || s.includes("srls") || s.includes("semplificata")) return "srls";
+    if (s.includes("s.r.l") || s.includes("srl") || s.includes("responsabilita")) return "srl";
+    if (s.includes("s.p.a") || s.includes("spa") || s.includes("per azioni")) return "spa";
+    if (s.includes("s.a.p.a") || s.includes("sapa") || s.includes("accomandita per azioni")) return "sapa";
+    if (s.includes("s.a.s") || s.includes("sas") || s.includes("accomandita semplice")) return "sas";
+    if (s.includes("s.n.c") || s.includes("snc") || s.includes("nome collettivo")) return "snc";
+    if (s.includes("cooperativa") || s.includes("coop")) return "cooperativa";
+    if (s.includes("individuale") || s.includes("ditta")) return "ditta_individuale";
+    return "altro";
+  }
+
+  async function handleVisuraUpload(file: File) {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Formato non valido", { description: "Carica un PDF della visura camerale." });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File troppo grande", { description: "Massimo 20 MB." });
+      return;
+    }
+    setExtracting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      // base64 encoding sicuro per file binari
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+      }
+      const pdf_base64 = btoa(binary);
+
+      const result = await extractVisura({ data: { pdf_base64, filename: file.name } });
+      if (result.status === "success") {
+        const { values: merged, sources: mergedSources } = applyVerifiedData(values, sources, result.data, "document");
+        // Inferisci company_type da legal_form
+        const inferred = inferCompanyType(result.data.legal_form);
+        if (inferred && !merged.company_type) {
+          merged.company_type = inferred;
+          mergedSources.company_type = "document";
+        }
+        onChange(merged, mergedSources);
+        onVerified?.("visura camerale");
+        setAdvancedOpen(true);
+        toast.success("Dati estratti dalla visura", {
+          description: `${result.extractedFields.length} campi precompilati — rivedi prima di salvare.`,
+        });
+      } else {
+        toast.error("Estrazione non riuscita", { description: result.message });
+      }
+    } catch (err) {
+      toast.error("Errore lettura file", {
+        description: err instanceof Error ? err.message : "Imprevisto durante il caricamento.",
+      });
+    } finally {
+      setExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Verifica P.IVA */}
@@ -251,12 +318,42 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, compact 
             Verifica e compila
           </Button>
         </div>
+
+        {/* Upload visura camerale */}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Hai una visura camerale?</span> Caricala in PDF
+            e l'AI compilerà i dati automaticamente (anche senza Partita IVA).
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleVisuraUpload(f);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={extracting}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {extracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+            Carica visura (PDF)
+          </Button>
+        </div>
+
         {lastResult && lastResult.status !== "success" && (
           <Alert variant="default" className="mt-3 border-amber-500/30 bg-amber-500/10">
             <ShieldAlert className="h-4 w-4 text-amber-400" />
             <AlertTitle className="text-amber-300">Verifica automatica non riuscita</AlertTitle>
             <AlertDescription className="text-xs text-amber-200/80">
-              Nessun problema: puoi proseguire compilando manualmente i campi essenziali qui sotto.
+              Nessun problema: puoi proseguire compilando manualmente i campi essenziali qui sotto,
+              oppure caricare la visura camerale qui sopra.
             </AlertDescription>
           </Alert>
         )}
