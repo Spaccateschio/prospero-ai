@@ -213,6 +213,17 @@ function OnboardingWizard() {
                 onProvider={(provider) =>
                   setData((d) => ({ ...d, provider }))
                 }
+                onExtras={(extras) =>
+                  setData((d) => ({
+                    ...d,
+                    founded_year: extras.founded_year ?? d.founded_year,
+                    employees_count: extras.employees_count ?? d.employees_count,
+                    iso_certifications:
+                      extras.iso_certifications.length > 0
+                        ? Array.from(new Set([...(d.iso_certifications ?? []), ...extras.iso_certifications]))
+                        : d.iso_certifications,
+                  }))
+                }
                 onNext={() => {
                   const a = data.anagrafica;
                   if (!a.name.trim()) {
