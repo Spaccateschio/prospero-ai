@@ -384,6 +384,7 @@ export type Database = {
           annual_revenue: number | null
           ateco: string | null
           ateco_description: string | null
+          cashflow_alert_threshold: number | null
           chamber_of_commerce: string | null
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"] | null
@@ -422,6 +423,7 @@ export type Database = {
           annual_revenue?: number | null
           ateco?: string | null
           ateco_description?: string | null
+          cashflow_alert_threshold?: number | null
           chamber_of_commerce?: string | null
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"] | null
@@ -460,6 +462,7 @@ export type Database = {
           annual_revenue?: number | null
           ateco?: string | null
           ateco_description?: string | null
+          cashflow_alert_threshold?: number | null
           chamber_of_commerce?: string | null
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"] | null
@@ -901,6 +904,77 @@ export type Database = {
           },
         ]
       }
+      deadlines: {
+        Row: {
+          actual_amount: number | null
+          category: string | null
+          company_id: string
+          confidence: Database["public"]["Enums"]["tax_confidence"]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string
+          estimated_amount: number | null
+          id: string
+          is_demo: boolean
+          kind: Database["public"]["Enums"]["deadline_kind"]
+          notify_days_before: number
+          paid_at: string | null
+          recurrence: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number | null
+          category?: string | null
+          company_id: string
+          confidence?: Database["public"]["Enums"]["tax_confidence"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date: string
+          estimated_amount?: number | null
+          id?: string
+          is_demo?: boolean
+          kind?: Database["public"]["Enums"]["deadline_kind"]
+          notify_days_before?: number
+          paid_at?: string | null
+          recurrence?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number | null
+          category?: string | null
+          company_id?: string
+          confidence?: Database["public"]["Enums"]["tax_confidence"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string
+          estimated_amount?: number | null
+          id?: string
+          is_demo?: boolean
+          kind?: Database["public"]["Enums"]["deadline_kind"]
+          notify_days_before?: number
+          paid_at?: string | null
+          recurrence?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deadlines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events_timeline: {
         Row: {
           amount: number | null
@@ -1076,8 +1150,11 @@ export type Database = {
           is_demo: boolean
           issue_date: string | null
           notes: string | null
+          notes_internal: string | null
           number: string | null
+          paid_amount: number
           paid_date: string | null
+          payment_method: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           total_amount: number
           updated_at: string
@@ -1098,8 +1175,11 @@ export type Database = {
           is_demo?: boolean
           issue_date?: string | null
           notes?: string | null
+          notes_internal?: string | null
           number?: string | null
+          paid_amount?: number
           paid_date?: string | null
+          payment_method?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           total_amount: number
           updated_at?: string
@@ -1120,8 +1200,11 @@ export type Database = {
           is_demo?: boolean
           issue_date?: string | null
           notes?: string | null
+          notes_internal?: string | null
           number?: string | null
+          paid_amount?: number
           paid_date?: string | null
+          payment_method?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           total_amount?: number
           updated_at?: string
@@ -1150,9 +1233,11 @@ export type Database = {
           company_id: string
           created_at: string
           end_date: string | null
+          frequency: string
           id: string
           initial_amount: number
           installment: number | null
+          is_demo: boolean
           lender: string | null
           name: string
           next_due_date: string | null
@@ -1162,6 +1247,7 @@ export type Database = {
           rate_value: number | null
           residual: number
           start_date: string | null
+          status: string
           total_installments: number | null
           updated_at: string
         }
@@ -1169,9 +1255,11 @@ export type Database = {
           company_id: string
           created_at?: string
           end_date?: string | null
+          frequency?: string
           id?: string
           initial_amount: number
           installment?: number | null
+          is_demo?: boolean
           lender?: string | null
           name: string
           next_due_date?: string | null
@@ -1181,6 +1269,7 @@ export type Database = {
           rate_value?: number | null
           residual: number
           start_date?: string | null
+          status?: string
           total_installments?: number | null
           updated_at?: string
         }
@@ -1188,9 +1277,11 @@ export type Database = {
           company_id?: string
           created_at?: string
           end_date?: string | null
+          frequency?: string
           id?: string
           initial_amount?: number
           installment?: number | null
+          is_demo?: boolean
           lender?: string | null
           name?: string
           next_due_date?: string | null
@@ -1200,6 +1291,7 @@ export type Database = {
           rate_value?: number | null
           residual?: number
           start_date?: string | null
+          status?: string
           total_installments?: number | null
           updated_at?: string
         }
@@ -1409,62 +1501,6 @@ export type Database = {
           },
         ]
       }
-      tax_deadlines: {
-        Row: {
-          actual_amount: number | null
-          company_id: string
-          confidence: Database["public"]["Enums"]["tax_confidence"]
-          created_at: string
-          description: string | null
-          due_date: string
-          estimated_amount: number | null
-          id: string
-          notify_days_before: number
-          paid_at: string | null
-          status: Database["public"]["Enums"]["tax_status"]
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          actual_amount?: number | null
-          company_id: string
-          confidence?: Database["public"]["Enums"]["tax_confidence"]
-          created_at?: string
-          description?: string | null
-          due_date: string
-          estimated_amount?: number | null
-          id?: string
-          notify_days_before?: number
-          paid_at?: string | null
-          status?: Database["public"]["Enums"]["tax_status"]
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          actual_amount?: number | null
-          company_id?: string
-          confidence?: Database["public"]["Enums"]["tax_confidence"]
-          created_at?: string
-          description?: string | null
-          due_date?: string
-          estimated_amount?: number | null
-          id?: string
-          notify_days_before?: number
-          paid_at?: string | null
-          status?: Database["public"]["Enums"]["tax_status"]
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tax_deadlines_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       transaction_categories: {
         Row: {
           color: string
@@ -1517,10 +1553,14 @@ export type Database = {
           invoice_id: string | null
           is_demo: boolean
           is_forecast: boolean
+          origin: string
           payment_method: string | null
           reconciled: boolean
           recurrence: string | null
           source: string | null
+          source_deadline_id: string | null
+          source_invoice_id: string | null
+          source_loan_id: string | null
           source_ref: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1539,10 +1579,14 @@ export type Database = {
           invoice_id?: string | null
           is_demo?: boolean
           is_forecast?: boolean
+          origin?: string
           payment_method?: string | null
           reconciled?: boolean
           recurrence?: string | null
           source?: string | null
+          source_deadline_id?: string | null
+          source_invoice_id?: string | null
+          source_loan_id?: string | null
           source_ref?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1561,10 +1605,14 @@ export type Database = {
           invoice_id?: string | null
           is_demo?: boolean
           is_forecast?: boolean
+          origin?: string
           payment_method?: string | null
           reconciled?: boolean
           recurrence?: string | null
           source?: string | null
+          source_deadline_id?: string | null
+          source_invoice_id?: string | null
+          source_loan_id?: string | null
           source_ref?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -1576,6 +1624,27 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_source_deadline_fkey"
+            columns: ["source_deadline_id"]
+            isOneToOne: false
+            referencedRelation: "deadlines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_source_invoice_id_fkey"
+            columns: ["source_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_source_loan_id_fkey"
+            columns: ["source_loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
             referencedColumns: ["id"]
           },
         ]
@@ -1667,6 +1736,7 @@ export type Database = {
         | "expiring_soon"
         | "expired"
         | "under_renegotiation"
+      deadline_kind: "tax" | "contract" | "payment" | "admin" | "other"
       diagnosis_severity: "critical" | "warning" | "info"
       grant_type:
         | "fondo_perduto"
@@ -1675,7 +1745,13 @@ export type Database = {
         | "garanzia"
         | "misto"
       invoice_direction: "attiva" | "passiva"
-      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
+      invoice_status:
+        | "draft"
+        | "sent"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+        | "partially_paid"
       iva_frequency: "mensile" | "trimestrale" | "annuale"
       loan_rate_type: "fisso" | "variabile" | "misto"
       opportunity_status:
@@ -1836,6 +1912,7 @@ export const Constants = {
         "expired",
         "under_renegotiation",
       ],
+      deadline_kind: ["tax", "contract", "payment", "admin", "other"],
       diagnosis_severity: ["critical", "warning", "info"],
       grant_type: [
         "fondo_perduto",
@@ -1845,7 +1922,14 @@ export const Constants = {
         "misto",
       ],
       invoice_direction: ["attiva", "passiva"],
-      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
+      invoice_status: [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled",
+        "partially_paid",
+      ],
       iva_frequency: ["mensile", "trimestrale", "annuale"],
       loan_rate_type: ["fisso", "variabile", "misto"],
       opportunity_status: [
