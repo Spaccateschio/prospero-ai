@@ -180,15 +180,6 @@ function OnboardingWizard() {
 
         <div className="grid gap-8 md:grid-cols-[220px_1fr]">
           <ol className="space-y-3 text-sm">
-            {STEPS.map((s) => (
-              <li
-                key={s.id}
-                className={cn(
-                  "flex gap-3 rounded-md p-2",
-                  step === s.id && "bg-accent text-accent-foreground",
-                )}
-              >
-          <ol className="space-y-3 text-sm">
             {STEPS.map((s) => {
               const reachable = s.id <= maxStep;
               return (
