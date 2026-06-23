@@ -175,9 +175,12 @@ export type AnagraficaFormProps = {
 
 export function AnagraficaForm({ values, sources, onChange, onVerified, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
+  const extractVisura = useServerFn(extractVisuraData);
   const [verifying, setVerifying] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [lastResult, setLastResult] = useState<VatLookupResult | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   function update<K extends keyof AnagraficaValues>(key: K, value: AnagraficaValues[K]) {
     const nextSources = { ...sources };
