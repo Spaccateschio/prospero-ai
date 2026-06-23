@@ -4,8 +4,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { NormalizedCompanyData } from "@/lib/vat-lookup.functions";
 
+export type VisuraExtras = {
+  founded_year: number | null;
+  employees_count: number | null;
+  iso_certifications: string[];
+};
+
 export type VisuraExtractionResult =
-  | { status: "success"; data: NormalizedCompanyData; extractedFields: string[] }
+  | { status: "success"; data: NormalizedCompanyData; extras: VisuraExtras; extractedFields: string[] }
   | { status: "error"; message: string };
 
 const InputSchema = z.object({
