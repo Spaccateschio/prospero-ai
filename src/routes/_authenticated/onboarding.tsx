@@ -70,20 +70,8 @@ const ISO_OPTIONS = [
   { id: "iso_27001", label: "ISO 27001 — Sicurezza informazioni" },
 ];
 
-const step1Schema = z.object({
-  name: z.string().trim().min(2, "Obbligatorio").max(120),
-  legal_name: z.string().trim().max(160).optional().or(z.literal("")),
-  vat: z.string().trim().max(20).optional().or(z.literal("")),
-  ateco: z.string().trim().max(10).optional().or(z.literal("")),
-  sector: z.string().trim().max(80).optional().or(z.literal("")),
-  region: z.string().optional(),
-  province: z.string().trim().max(60).optional().or(z.literal("")),
-  city: z.string().trim().max(80).optional().or(z.literal("")),
-  regime_fiscale: z.enum(["ordinario", "semplificato", "forfettario", "agricolo"]).optional(),
-  company_type: z
-    .enum(["srl", "srls", "spa", "sapa", "snc", "sas", "ditta_individuale", "cooperativa", "altro"])
-    .optional(),
-});
+// step1: gestito dal componente AnagraficaForm (vedi components/company/anagrafica-form.tsx)
+
 
 const step2Schema = z.object({
   employees_count: z.coerce.number().int().min(0).max(100000).optional(),
