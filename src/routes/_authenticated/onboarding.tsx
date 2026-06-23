@@ -202,7 +202,6 @@ function OnboardingWizard() {
               <Step1
                 values={data.anagrafica}
                 sources={data.sources}
-                regimeFiscale={data.regime_fiscale}
                 onChange={(anagrafica, sources, provider) =>
                   setData((d) => ({
                     ...d,
@@ -211,10 +210,18 @@ function OnboardingWizard() {
                     provider: provider ?? d.provider,
                   }))
                 }
-                onChangeRegime={(rf) => setData((d) => ({ ...d, regime_fiscale: rf }))}
                 onNext={() => {
-                  if (!data.anagrafica.name.trim()) {
-                    toast.error("Inserisci almeno il nome dell'azienda");
+                  const a = data.anagrafica;
+                  if (!a.name.trim()) {
+                    toast.error("Inserisci il nome commerciale / ragione sociale");
+                    return;
+                  }
+                  if (!a.company_type) {
+                    toast.error("Seleziona la forma giuridica");
+                    return;
+                  }
+                  if (!a.region) {
+                    toast.error("Seleziona la regione");
                     return;
                   }
                   setStep(2);
