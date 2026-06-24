@@ -48,15 +48,18 @@ const footerItems = [
   { title: "Impostazioni", url: "/settings", icon: Settings },
 ] as const;
 
-export function AppSidebar() {
+export function AppSidebar({ basePath = "" }: { basePath?: string } = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(path + "/");
+  const withBase = (p: string) => `${basePath}${p}`;
+  const isActive = (path: string) => {
+    const full = withBase(path);
+    return pathname === full || pathname.startsWith(full + "/");
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="px-3 py-4">
-        <Link to="/dashboard" className="flex items-center gap-2">
+        <Link to={withBase("/dashboard")} className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Wallet className="h-4 w-4" />
           </div>
@@ -77,7 +80,7 @@ export function AppSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url}>
+                    <Link to={withBase(item.url)}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -94,7 +97,7 @@ export function AppSidebar() {
           {footerItems.map((item) => (
             <SidebarMenuItem key={item.url}>
               <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                <Link to={item.url}>
+                <Link to={withBase(item.url)}>
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>
                 </Link>
@@ -106,3 +109,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
