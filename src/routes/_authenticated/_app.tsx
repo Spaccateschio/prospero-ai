@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
+import { DemoBanner } from "@/components/demo-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useActiveCompany } from "@/hooks/use-companies";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,7 @@ function AppLayout() {
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <TopBar />
+          <DemoBanner />
           <main className="flex-1 overflow-x-hidden">
             <Outlet />
           </main>
