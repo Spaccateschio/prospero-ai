@@ -193,18 +193,27 @@ function DemoButton() {
 
 
   return (
-    <Button
-      type="button"
-      variant="secondary"
-      className="w-full"
-      onClick={startDemo}
-      disabled={busy}
-    >
-      {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Prova senza registrarti
-    </Button>
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full"
+        onClick={startDemo}
+        disabled={busy}
+      >
+        {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Prova senza registrarti
+      </Button>
+      {lastError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive break-words">
+          <div className="font-medium">Errore login anonimo:</div>
+          <div className="font-mono">{lastError}</div>
+        </div>
+      )}
+    </div>
   );
 }
+
 
 function GoogleButton({ disabled, label }: { disabled?: boolean; label: string }) {
   const [busy, setBusy] = useState(false);
