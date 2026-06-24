@@ -13,6 +13,10 @@ import { Route as DemoRouteImport } from './routes/demo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoSettingsRouteImport } from './routes/demo.settings'
+import { Route as DemoDashboardRouteImport } from './routes/demo.dashboard'
+import { Route as DemoCashFlowRouteImport } from './routes/demo.cash-flow'
+import { Route as DemoAccountingRouteImport } from './routes/demo.accounting'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/_app'
 import { Route as AuthenticatedAppTaxCalendarRouteImport } from './routes/_authenticated/_app/tax-calendar'
@@ -47,6 +51,26 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DemoSettingsRoute = DemoSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoDashboardRoute = DemoDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoCashFlowRoute = DemoCashFlowRouteImport.update({
+  id: '/cash-flow',
+  path: '/cash-flow',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoAccountingRoute = DemoAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => DemoRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
@@ -139,8 +163,12 @@ const AuthenticatedAppAccountingRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/settings': typeof DemoSettingsRoute
   '/accounting': typeof AuthenticatedAppAccountingRoute
   '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -158,8 +186,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/settings': typeof DemoSettingsRoute
   '/accounting': typeof AuthenticatedAppAccountingRoute
   '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -179,9 +211,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
-  '/demo': typeof DemoRoute
+  '/demo': typeof DemoRouteWithChildren
   '/_authenticated/_app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/settings': typeof DemoSettingsRoute
   '/_authenticated/_app/accounting': typeof AuthenticatedAppAccountingRoute
   '/_authenticated/_app/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/_authenticated/_app/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -203,6 +239,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/demo'
     | '/onboarding'
+    | '/demo/accounting'
+    | '/demo/cash-flow'
+    | '/demo/dashboard'
+    | '/demo/settings'
     | '/accounting'
     | '/ai-consultant'
     | '/balance-sheets'
@@ -222,6 +262,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/demo'
     | '/onboarding'
+    | '/demo/accounting'
+    | '/demo/cash-flow'
+    | '/demo/dashboard'
+    | '/demo/settings'
     | '/accounting'
     | '/ai-consultant'
     | '/balance-sheets'
@@ -243,6 +287,10 @@ export interface FileRouteTypes {
     | '/demo'
     | '/_authenticated/_app'
     | '/_authenticated/onboarding'
+    | '/demo/accounting'
+    | '/demo/cash-flow'
+    | '/demo/dashboard'
+    | '/demo/settings'
     | '/_authenticated/_app/accounting'
     | '/_authenticated/_app/ai-consultant'
     | '/_authenticated/_app/balance-sheets'
@@ -262,7 +310,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
-  DemoRoute: typeof DemoRoute
+  DemoRoute: typeof DemoRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -294,6 +342,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/demo/settings': {
+      id: '/demo/settings'
+      path: '/settings'
+      fullPath: '/demo/settings'
+      preLoaderRoute: typeof DemoSettingsRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/dashboard': {
+      id: '/demo/dashboard'
+      path: '/dashboard'
+      fullPath: '/demo/dashboard'
+      preLoaderRoute: typeof DemoDashboardRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/cash-flow': {
+      id: '/demo/cash-flow'
+      path: '/cash-flow'
+      fullPath: '/demo/cash-flow'
+      preLoaderRoute: typeof DemoCashFlowRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/accounting': {
+      id: '/demo/accounting'
+      path: '/accounting'
+      fullPath: '/demo/accounting'
+      preLoaderRoute: typeof DemoAccountingRouteImport
+      parentRoute: typeof DemoRoute
     }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
@@ -452,11 +528,27 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface DemoRouteChildren {
+  DemoAccountingRoute: typeof DemoAccountingRoute
+  DemoCashFlowRoute: typeof DemoCashFlowRoute
+  DemoDashboardRoute: typeof DemoDashboardRoute
+  DemoSettingsRoute: typeof DemoSettingsRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoAccountingRoute: DemoAccountingRoute,
+  DemoCashFlowRoute: DemoCashFlowRoute,
+  DemoDashboardRoute: DemoDashboardRoute,
+  DemoSettingsRoute: DemoSettingsRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
-  DemoRoute: DemoRoute,
+  DemoRoute: DemoRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
