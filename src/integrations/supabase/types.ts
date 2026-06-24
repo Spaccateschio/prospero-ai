@@ -1354,7 +1354,7 @@ export type Database = {
           ai_extractions_used: number
           avatar_url: string | null
           created_at: string
-          email: string
+          email: string | null
           full_name: string | null
           id: string
           is_demo: boolean
@@ -1368,7 +1368,7 @@ export type Database = {
           ai_extractions_used?: number
           avatar_url?: string | null
           created_at?: string
-          email: string
+          email?: string | null
           full_name?: string | null
           id: string
           is_demo?: boolean
@@ -1382,7 +1382,7 @@ export type Database = {
           ai_extractions_used?: number
           avatar_url?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_demo?: boolean
