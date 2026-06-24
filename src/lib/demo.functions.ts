@@ -68,13 +68,13 @@ export const seedDemoCompany = createServerFn({ method: "POST" })
 
     const invoices = [
       // Vendite incassate
-      { direction: "sale", number: "2025/001", counterpart_name: "Beta Spa", amount: 12000, vat_amount: 2640, total_amount: 14640, issue_date: iso(monthAgo(2)), due_date: iso(monthAgo(1)), paid_date: iso(monthAgo(1)), status: "paid" },
-      { direction: "sale", number: "2025/002", counterpart_name: "Gamma Srl", amount: 8500, vat_amount: 1870, total_amount: 10370, issue_date: iso(monthAgo(2)), due_date: iso(monthAgo(1)), paid_date: iso(monthAgo(1)), status: "paid" },
-      { direction: "sale", number: "2025/003", counterpart_name: "Delta Industries", amount: 15000, vat_amount: 3300, total_amount: 18300, issue_date: iso(monthAgo(1)), due_date: iso(today), paid_date: null, status: "issued" },
-      { direction: "sale", number: "2025/004", counterpart_name: "Omega Consulting", amount: 6200, vat_amount: 1364, total_amount: 7564, issue_date: iso(today), due_date: iso(new Date(today.getTime() + 30 * 86400000)), paid_date: null, status: "issued" },
+      { direction: "attiva" as const, number: "2025/001", counterpart_name: "Beta Spa", amount: 12000, vat_amount: 2640, total_amount: 14640, issue_date: iso(monthAgo(2)), due_date: iso(monthAgo(1)), paid_date: iso(monthAgo(1)), status: "paid" as const },
+      { direction: "attiva" as const, number: "2025/002", counterpart_name: "Gamma Srl", amount: 8500, vat_amount: 1870, total_amount: 10370, issue_date: iso(monthAgo(2)), due_date: iso(monthAgo(1)), paid_date: iso(monthAgo(1)), status: "paid" as const },
+      { direction: "attiva" as const, number: "2025/003", counterpart_name: "Delta Industries", amount: 15000, vat_amount: 3300, total_amount: 18300, issue_date: iso(monthAgo(1)), due_date: iso(today), paid_date: null, status: "sent" as const },
+      { direction: "attiva" as const, number: "2025/004", counterpart_name: "Omega Consulting", amount: 6200, vat_amount: 1364, total_amount: 7564, issue_date: iso(today), due_date: iso(new Date(today.getTime() + 30 * 86400000)), paid_date: null, status: "sent" as const },
       // Acquisti
-      { direction: "purchase", number: "F-2025-44", counterpart_name: "Hosting Pro Srl", amount: 1200, vat_amount: 264, total_amount: 1464, issue_date: iso(monthAgo(1)), due_date: iso(today), paid_date: iso(today), status: "paid" },
-      { direction: "purchase", number: "F-2025-45", counterpart_name: "Studio Commercialista", amount: 800, vat_amount: 176, total_amount: 976, issue_date: iso(monthAgo(1)), due_date: iso(new Date(today.getTime() + 15 * 86400000)), paid_date: null, status: "issued" },
+      { direction: "passiva" as const, number: "F-2025-44", counterpart_name: "Hosting Pro Srl", amount: 1200, vat_amount: 264, total_amount: 1464, issue_date: iso(monthAgo(1)), due_date: iso(today), paid_date: iso(today), status: "paid" as const },
+      { direction: "passiva" as const, number: "F-2025-45", counterpart_name: "Studio Commercialista", amount: 800, vat_amount: 176, total_amount: 976, issue_date: iso(monthAgo(1)), due_date: iso(new Date(today.getTime() + 15 * 86400000)), paid_date: null, status: "sent" as const },
     ];
 
     const { error: invErr } = await supabase.from("invoices").insert(
