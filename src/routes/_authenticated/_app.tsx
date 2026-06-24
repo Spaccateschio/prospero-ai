@@ -45,7 +45,7 @@ function AppLayout() {
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <TopBar />
-          <DemoBanner />
+
           <main className="flex-1 overflow-x-hidden">
             <Outlet />
           </main>
