@@ -140,13 +140,40 @@ function AuthPage() {
 function DemoButton() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   async function startDemo() {
     setBusy(true);
+    setLastError(null);
     try {
-      const { error } = await supabase.auth.signInAnonymously();
+      let result;
+      try {
+        result = await supabase.auth.signInAnonymously();
+      } catch (e: any) {
+        const msg = `${e?.name ?? "Error"}: ${e?.message ?? String(e)}`;
+        console.error("[demo] signInAnonymously threw", e);
+        setLastError(msg);
+        toast.error("Impossibile avviare la prova", { description: msg });
+        return;
+      }
+      const { error, data } = result;
       if (error) {
-        toast.error("Impossibile avviare la prova", { description: error.message });
+        const details = [
+          error.message,
+          error.status ? `status ${error.status}` : null,
+          (error as any).code ? `code ${(error as any).code}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        console.error("[demo] signInAnonymously error", error);
+        setLastError(details);
+        toast.error("Impossibile avviare la prova", { description: details });
+        return;
+      }
+      if (!data?.user) {
+        const msg = "Nessuna sessione restituita dal server.";
+        setLastError(msg);
+        toast.error("Impossibile avviare la prova", { description: msg });
         return;
       }
       // Seed dati demo (idempotente)
@@ -164,19 +191,29 @@ function DemoButton() {
     }
   }
 
+
   return (
-    <Button
-      type="button"
-      variant="secondary"
-      className="w-full"
-      onClick={startDemo}
-      disabled={busy}
-    >
-      {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Prova senza registrarti
-    </Button>
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full"
+        onClick={startDemo}
+        disabled={busy}
+      >
+        {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Prova senza registrarti
+      </Button>
+      {lastError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive break-words">
+          <div className="font-medium">Errore login anonimo:</div>
+          <div className="font-mono">{lastError}</div>
+        </div>
+      )}
+    </div>
   );
 }
+
 
 function GoogleButton({ disabled, label }: { disabled?: boolean; label: string }) {
   const [busy, setBusy] = useState(false);
