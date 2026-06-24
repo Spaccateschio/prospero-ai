@@ -225,6 +225,11 @@ Schema atteso:
         return { status: "error", message: "Nessun dato estratto: il PDF potrebbe non essere una visura." };
       }
 
+      // Conta l'utilizzo (per limitare la modalità prova)
+      if (profile?.is_demo) {
+        await context.supabase.rpc("increment_ai_extractions");
+      }
+
       return { status: "success", data: normalized, extras, extractedFields };
     } catch (err) {
       console.error("[extractVisuraData] failed", err);
