@@ -68,16 +68,17 @@ export const useDemoStore = create<State & Actions>()(
       addPayment: (p) =>
         set((s) => {
           const full: DemoPayment = { ...p, id: newId() };
-          const txs = [...s.transactions, {
+          const tx: DemoTransaction = {
             id: newId(),
             date: full.date,
             description: `Pagamento — ${full.counterpart_name}`,
             amount: full.amount,
-            type: full.direction === "in" ? "income" : "expense" as const,
+            type: full.direction === "in" ? "income" : "expense",
             category: full.direction === "in" ? "Vendite" : "Servizi",
-          }];
-          return { payments: [full, ...s.payments], transactions: txs };
+          };
+          return { payments: [full, ...s.payments], transactions: [...s.transactions, tx] };
         }),
+
 
       addClient: (c) =>
         set((s) => ({ clients: [{ ...c, id: newId() }, ...s.clients] })),
