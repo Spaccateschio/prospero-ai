@@ -140,13 +140,40 @@ function AuthPage() {
 function DemoButton() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   async function startDemo() {
     setBusy(true);
+    setLastError(null);
     try {
-      const { error } = await supabase.auth.signInAnonymously();
+      let result;
+      try {
+        result = await supabase.auth.signInAnonymously();
+      } catch (e: any) {
+        const msg = `${e?.name ?? "Error"}: ${e?.message ?? String(e)}`;
+        console.error("[demo] signInAnonymously threw", e);
+        setLastError(msg);
+        toast.error("Impossibile avviare la prova", { description: msg });
+        return;
+      }
+      const { error, data } = result;
       if (error) {
-        toast.error("Impossibile avviare la prova", { description: error.message });
+        const details = [
+          error.message,
+          error.status ? `status ${error.status}` : null,
+          (error as any).code ? `code ${(error as any).code}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        console.error("[demo] signInAnonymously error", error);
+        setLastError(details);
+        toast.error("Impossibile avviare la prova", { description: details });
+        return;
+      }
+      if (!data?.user) {
+        const msg = "Nessuna sessione restituita dal server.";
+        setLastError(msg);
+        toast.error("Impossibile avviare la prova", { description: msg });
         return;
       }
       // Seed dati demo (idempotente)
@@ -163,6 +190,7 @@ function DemoButton() {
       setBusy(false);
     }
   }
+
 
   return (
     <Button
