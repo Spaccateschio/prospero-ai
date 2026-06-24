@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { seedDemoCompany } from "@/lib/demo.functions";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Email non valida").max(255),
@@ -38,7 +39,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) {
+    // Gli utenti anonimi (modalità prova) possono visitare /auth per registrarsi
+    if (data.user && !data.user.is_anonymous) {
       throw redirect({ to: "/dashboard" });
     }
   },
@@ -103,7 +105,7 @@ function AuthPage() {
 
       {/* Form side */}
       <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md space-y-4">
           <Tabs defaultValue="sign-in" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="sign-in">Accedi</TabsTrigger>
@@ -117,9 +119,62 @@ function AuthPage() {
               <SignUpCard />
             </TabsContent>
           </Tabs>
+
+          <div className="relative">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              oppure
+            </span>
+          </div>
+
+          <DemoButton />
+          <p className="text-center text-xs text-muted-foreground">
+            Nessuna registrazione richiesta — esplora con dati di esempio.
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function DemoButton() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  async function startDemo() {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        toast.error("Impossibile avviare la prova", { description: error.message });
+        return;
+      }
+      // Seed dati demo (idempotente)
+      try {
+        await seedDemoCompany();
+      } catch (err) {
+        console.warn("[demo] seed failed", err);
+      }
+      toast.success("Modalità prova attivata", {
+        description: "Stai esplorando con dati di esempio.",
+      });
+      navigate({ to: "/dashboard", replace: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      className="w-full"
+      onClick={startDemo}
+      disabled={busy}
+    >
+      {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Prova senza registrarti
+    </Button>
   );
 }
 
@@ -244,24 +299,54 @@ function SignUpCard() {
 
   async function onSubmit(values: z.infer<typeof signUpSchema>) {
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { full_name: values.fullName },
-      },
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Registrazione fallita", { description: error.message });
-      return;
+    try {
+      // Se l'utente è anonimo (modalità prova) → upgrade dell'account esistente,
+      // così i dati demo restano collegati allo stesso auth.uid.
+      const { data: current } = await supabase.auth.getUser();
+      const isAnon = !!current.user?.is_anonymous;
+
+      if (isAnon && current.user) {
+        const { error: updErr } = await supabase.auth.updateUser({
+          email: values.email,
+          password: values.password,
+          data: { full_name: values.fullName },
+        });
+        if (updErr) {
+          toast.error("Registrazione fallita", { description: updErr.message });
+          return;
+        }
+        // Il profilo non è più demo
+        await supabase
+          .from("profiles")
+          .update({ is_demo: false, full_name: values.fullName, email: values.email })
+          .eq("id", current.user.id);
+
+        toast.success("Account creato!", {
+          description: "I tuoi dati di prova sono stati salvati.",
+        });
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: values.fullName },
+        },
+      });
+      if (error) {
+        toast.error("Registrazione fallita", { description: error.message });
+        return;
+      }
+      toast.success("Account creato!", {
+        description: "Controlla la tua email per confermare e accedere.",
+      });
+      navigate({ to: "/dashboard", replace: true });
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Account creato!", {
-      description: "Controlla la tua email per confermare e accedere.",
-    });
-    // Se la conferma email è disabilitata, l'utente è già loggato
-    navigate({ to: "/dashboard", replace: true });
   }
 
   return (
