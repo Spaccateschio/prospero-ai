@@ -13,9 +13,18 @@ import { Route as DemoRouteImport } from './routes/demo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoTaxCalendarRouteImport } from './routes/demo.tax-calendar'
+import { Route as DemoSimulationsRouteImport } from './routes/demo.simulations'
 import { Route as DemoSettingsRouteImport } from './routes/demo.settings'
+import { Route as DemoOpportunitiesRouteImport } from './routes/demo.opportunities'
+import { Route as DemoFinancingRouteImport } from './routes/demo.financing'
 import { Route as DemoDashboardRouteImport } from './routes/demo.dashboard'
+import { Route as DemoCostMonitorRouteImport } from './routes/demo.cost-monitor'
+import { Route as DemoContractsRouteImport } from './routes/demo.contracts'
 import { Route as DemoCashFlowRouteImport } from './routes/demo.cash-flow'
+import { Route as DemoBusinessHealthRouteImport } from './routes/demo.business-health'
+import { Route as DemoBalanceSheetsRouteImport } from './routes/demo.balance-sheets'
+import { Route as DemoAiConsultantRouteImport } from './routes/demo.ai-consultant'
 import { Route as DemoAccountingRouteImport } from './routes/demo.accounting'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/_app'
@@ -52,9 +61,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoTaxCalendarRoute = DemoTaxCalendarRouteImport.update({
+  id: '/tax-calendar',
+  path: '/tax-calendar',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoSimulationsRoute = DemoSimulationsRouteImport.update({
+  id: '/simulations',
+  path: '/simulations',
+  getParentRoute: () => DemoRoute,
+} as any)
 const DemoSettingsRoute = DemoSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoOpportunitiesRoute = DemoOpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoFinancingRoute = DemoFinancingRouteImport.update({
+  id: '/financing',
+  path: '/financing',
   getParentRoute: () => DemoRoute,
 } as any)
 const DemoDashboardRoute = DemoDashboardRouteImport.update({
@@ -62,9 +91,34 @@ const DemoDashboardRoute = DemoDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => DemoRoute,
 } as any)
+const DemoCostMonitorRoute = DemoCostMonitorRouteImport.update({
+  id: '/cost-monitor',
+  path: '/cost-monitor',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoContractsRoute = DemoContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => DemoRoute,
+} as any)
 const DemoCashFlowRoute = DemoCashFlowRouteImport.update({
   id: '/cash-flow',
   path: '/cash-flow',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoBusinessHealthRoute = DemoBusinessHealthRouteImport.update({
+  id: '/business-health',
+  path: '/business-health',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoBalanceSheetsRoute = DemoBalanceSheetsRouteImport.update({
+  id: '/balance-sheets',
+  path: '/balance-sheets',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoAiConsultantRoute = DemoAiConsultantRouteImport.update({
+  id: '/ai-consultant',
+  path: '/ai-consultant',
   getParentRoute: () => DemoRoute,
 } as any)
 const DemoAccountingRoute = DemoAccountingRouteImport.update({
@@ -166,9 +220,18 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/ai-consultant': typeof DemoAiConsultantRoute
+  '/demo/balance-sheets': typeof DemoBalanceSheetsRoute
+  '/demo/business-health': typeof DemoBusinessHealthRoute
   '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/contracts': typeof DemoContractsRoute
+  '/demo/cost-monitor': typeof DemoCostMonitorRoute
   '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/financing': typeof DemoFinancingRoute
+  '/demo/opportunities': typeof DemoOpportunitiesRoute
   '/demo/settings': typeof DemoSettingsRoute
+  '/demo/simulations': typeof DemoSimulationsRoute
+  '/demo/tax-calendar': typeof DemoTaxCalendarRoute
   '/accounting': typeof AuthenticatedAppAccountingRoute
   '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -189,9 +252,18 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/ai-consultant': typeof DemoAiConsultantRoute
+  '/demo/balance-sheets': typeof DemoBalanceSheetsRoute
+  '/demo/business-health': typeof DemoBusinessHealthRoute
   '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/contracts': typeof DemoContractsRoute
+  '/demo/cost-monitor': typeof DemoCostMonitorRoute
   '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/financing': typeof DemoFinancingRoute
+  '/demo/opportunities': typeof DemoOpportunitiesRoute
   '/demo/settings': typeof DemoSettingsRoute
+  '/demo/simulations': typeof DemoSimulationsRoute
+  '/demo/tax-calendar': typeof DemoTaxCalendarRoute
   '/accounting': typeof AuthenticatedAppAccountingRoute
   '/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -215,9 +287,18 @@ export interface FileRoutesById {
   '/_authenticated/_app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/demo/accounting': typeof DemoAccountingRoute
+  '/demo/ai-consultant': typeof DemoAiConsultantRoute
+  '/demo/balance-sheets': typeof DemoBalanceSheetsRoute
+  '/demo/business-health': typeof DemoBusinessHealthRoute
   '/demo/cash-flow': typeof DemoCashFlowRoute
+  '/demo/contracts': typeof DemoContractsRoute
+  '/demo/cost-monitor': typeof DemoCostMonitorRoute
   '/demo/dashboard': typeof DemoDashboardRoute
+  '/demo/financing': typeof DemoFinancingRoute
+  '/demo/opportunities': typeof DemoOpportunitiesRoute
   '/demo/settings': typeof DemoSettingsRoute
+  '/demo/simulations': typeof DemoSimulationsRoute
+  '/demo/tax-calendar': typeof DemoTaxCalendarRoute
   '/_authenticated/_app/accounting': typeof AuthenticatedAppAccountingRoute
   '/_authenticated/_app/ai-consultant': typeof AuthenticatedAppAiConsultantRoute
   '/_authenticated/_app/balance-sheets': typeof AuthenticatedAppBalanceSheetsRoute
@@ -240,9 +321,18 @@ export interface FileRouteTypes {
     | '/demo'
     | '/onboarding'
     | '/demo/accounting'
+    | '/demo/ai-consultant'
+    | '/demo/balance-sheets'
+    | '/demo/business-health'
     | '/demo/cash-flow'
+    | '/demo/contracts'
+    | '/demo/cost-monitor'
     | '/demo/dashboard'
+    | '/demo/financing'
+    | '/demo/opportunities'
     | '/demo/settings'
+    | '/demo/simulations'
+    | '/demo/tax-calendar'
     | '/accounting'
     | '/ai-consultant'
     | '/balance-sheets'
@@ -263,9 +353,18 @@ export interface FileRouteTypes {
     | '/demo'
     | '/onboarding'
     | '/demo/accounting'
+    | '/demo/ai-consultant'
+    | '/demo/balance-sheets'
+    | '/demo/business-health'
     | '/demo/cash-flow'
+    | '/demo/contracts'
+    | '/demo/cost-monitor'
     | '/demo/dashboard'
+    | '/demo/financing'
+    | '/demo/opportunities'
     | '/demo/settings'
+    | '/demo/simulations'
+    | '/demo/tax-calendar'
     | '/accounting'
     | '/ai-consultant'
     | '/balance-sheets'
@@ -288,9 +387,18 @@ export interface FileRouteTypes {
     | '/_authenticated/_app'
     | '/_authenticated/onboarding'
     | '/demo/accounting'
+    | '/demo/ai-consultant'
+    | '/demo/balance-sheets'
+    | '/demo/business-health'
     | '/demo/cash-flow'
+    | '/demo/contracts'
+    | '/demo/cost-monitor'
     | '/demo/dashboard'
+    | '/demo/financing'
+    | '/demo/opportunities'
     | '/demo/settings'
+    | '/demo/simulations'
+    | '/demo/tax-calendar'
     | '/_authenticated/_app/accounting'
     | '/_authenticated/_app/ai-consultant'
     | '/_authenticated/_app/balance-sheets'
@@ -343,11 +451,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/tax-calendar': {
+      id: '/demo/tax-calendar'
+      path: '/tax-calendar'
+      fullPath: '/demo/tax-calendar'
+      preLoaderRoute: typeof DemoTaxCalendarRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/simulations': {
+      id: '/demo/simulations'
+      path: '/simulations'
+      fullPath: '/demo/simulations'
+      preLoaderRoute: typeof DemoSimulationsRouteImport
+      parentRoute: typeof DemoRoute
+    }
     '/demo/settings': {
       id: '/demo/settings'
       path: '/settings'
       fullPath: '/demo/settings'
       preLoaderRoute: typeof DemoSettingsRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/opportunities': {
+      id: '/demo/opportunities'
+      path: '/opportunities'
+      fullPath: '/demo/opportunities'
+      preLoaderRoute: typeof DemoOpportunitiesRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/financing': {
+      id: '/demo/financing'
+      path: '/financing'
+      fullPath: '/demo/financing'
+      preLoaderRoute: typeof DemoFinancingRouteImport
       parentRoute: typeof DemoRoute
     }
     '/demo/dashboard': {
@@ -357,11 +493,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoDashboardRouteImport
       parentRoute: typeof DemoRoute
     }
+    '/demo/cost-monitor': {
+      id: '/demo/cost-monitor'
+      path: '/cost-monitor'
+      fullPath: '/demo/cost-monitor'
+      preLoaderRoute: typeof DemoCostMonitorRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/contracts': {
+      id: '/demo/contracts'
+      path: '/contracts'
+      fullPath: '/demo/contracts'
+      preLoaderRoute: typeof DemoContractsRouteImport
+      parentRoute: typeof DemoRoute
+    }
     '/demo/cash-flow': {
       id: '/demo/cash-flow'
       path: '/cash-flow'
       fullPath: '/demo/cash-flow'
       preLoaderRoute: typeof DemoCashFlowRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/business-health': {
+      id: '/demo/business-health'
+      path: '/business-health'
+      fullPath: '/demo/business-health'
+      preLoaderRoute: typeof DemoBusinessHealthRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/balance-sheets': {
+      id: '/demo/balance-sheets'
+      path: '/balance-sheets'
+      fullPath: '/demo/balance-sheets'
+      preLoaderRoute: typeof DemoBalanceSheetsRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/ai-consultant': {
+      id: '/demo/ai-consultant'
+      path: '/ai-consultant'
+      fullPath: '/demo/ai-consultant'
+      preLoaderRoute: typeof DemoAiConsultantRouteImport
       parentRoute: typeof DemoRoute
     }
     '/demo/accounting': {
@@ -530,16 +701,34 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface DemoRouteChildren {
   DemoAccountingRoute: typeof DemoAccountingRoute
+  DemoAiConsultantRoute: typeof DemoAiConsultantRoute
+  DemoBalanceSheetsRoute: typeof DemoBalanceSheetsRoute
+  DemoBusinessHealthRoute: typeof DemoBusinessHealthRoute
   DemoCashFlowRoute: typeof DemoCashFlowRoute
+  DemoContractsRoute: typeof DemoContractsRoute
+  DemoCostMonitorRoute: typeof DemoCostMonitorRoute
   DemoDashboardRoute: typeof DemoDashboardRoute
+  DemoFinancingRoute: typeof DemoFinancingRoute
+  DemoOpportunitiesRoute: typeof DemoOpportunitiesRoute
   DemoSettingsRoute: typeof DemoSettingsRoute
+  DemoSimulationsRoute: typeof DemoSimulationsRoute
+  DemoTaxCalendarRoute: typeof DemoTaxCalendarRoute
 }
 
 const DemoRouteChildren: DemoRouteChildren = {
   DemoAccountingRoute: DemoAccountingRoute,
+  DemoAiConsultantRoute: DemoAiConsultantRoute,
+  DemoBalanceSheetsRoute: DemoBalanceSheetsRoute,
+  DemoBusinessHealthRoute: DemoBusinessHealthRoute,
   DemoCashFlowRoute: DemoCashFlowRoute,
+  DemoContractsRoute: DemoContractsRoute,
+  DemoCostMonitorRoute: DemoCostMonitorRoute,
   DemoDashboardRoute: DemoDashboardRoute,
+  DemoFinancingRoute: DemoFinancingRoute,
+  DemoOpportunitiesRoute: DemoOpportunitiesRoute,
   DemoSettingsRoute: DemoSettingsRoute,
+  DemoSimulationsRoute: DemoSimulationsRoute,
+  DemoTaxCalendarRoute: DemoTaxCalendarRoute,
 }
 
 const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
