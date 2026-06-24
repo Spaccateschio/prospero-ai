@@ -39,7 +39,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) {
+    // Gli utenti anonimi (modalità prova) possono visitare /auth per registrarsi
+    if (data.user && !data.user.is_anonymous) {
       throw redirect({ to: "/dashboard" });
     }
   },
