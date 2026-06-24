@@ -49,10 +49,23 @@ const ITALIAN_PROVINCE_TO_REGION: Record<string, string> = {
 export const extractVisuraData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
-  .handler(async ({ data }): Promise<VisuraExtractionResult> => {
+  .handler(async ({ data, context }): Promise<VisuraExtractionResult> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { status: "error", message: "Servizio AI non configurato." };
+    }
+
+    // Limite modalità prova: 1 estrazione AI gratuita
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("is_demo, ai_extractions_used")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (profile?.is_demo && (profile.ai_extractions_used ?? 0) >= 1) {
+      return {
+        status: "error",
+        message: "Hai usato l'estrazione AI gratuita della modalità prova. Registrati per continuare.",
+      };
     }
 
     const systemPrompt = `Sei un estrattore di dati da visure camerali italiane (Registro Imprese).
