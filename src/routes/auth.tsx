@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { seedDemoCompany } from "@/lib/demo.functions";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Email non valida").max(255),
@@ -103,7 +104,7 @@ function AuthPage() {
 
       {/* Form side */}
       <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md space-y-4">
           <Tabs defaultValue="sign-in" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="sign-in">Accedi</TabsTrigger>
@@ -117,9 +118,62 @@ function AuthPage() {
               <SignUpCard />
             </TabsContent>
           </Tabs>
+
+          <div className="relative">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              oppure
+            </span>
+          </div>
+
+          <DemoButton />
+          <p className="text-center text-xs text-muted-foreground">
+            Nessuna registrazione richiesta — esplora con dati di esempio.
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function DemoButton() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  async function startDemo() {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        toast.error("Impossibile avviare la prova", { description: error.message });
+        return;
+      }
+      // Seed dati demo (idempotente)
+      try {
+        await seedDemoCompany();
+      } catch (err) {
+        console.warn("[demo] seed failed", err);
+      }
+      toast.success("Modalità prova attivata", {
+        description: "Stai esplorando con dati di esempio.",
+      });
+      navigate({ to: "/dashboard", replace: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      className="w-full"
+      onClick={startDemo}
+      disabled={busy}
+    >
+      {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Prova senza registrarti
+    </Button>
   );
 }
 
