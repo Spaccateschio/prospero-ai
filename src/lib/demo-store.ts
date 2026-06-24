@@ -97,8 +97,9 @@ export const useDemoStore = create<State & Actions>()(
       storage: createJSONStorage(() =>
         typeof window !== "undefined"
           ? window.localStorage
-          : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as Storage),
+          : ({ getItem: () => null, setItem: () => {}, removeItem: () => {} } as unknown as Storage),
       ),
+
     },
   ),
 );
