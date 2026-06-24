@@ -1351,11 +1351,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_extractions_used: number
           avatar_url: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          is_demo: boolean
           locale: string
           onboarding_completed: boolean
           phone: string | null
@@ -1363,11 +1365,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_extractions_used?: number
           avatar_url?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          is_demo?: boolean
           locale?: string
           onboarding_completed?: boolean
           phone?: string | null
@@ -1375,11 +1379,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_extractions_used?: number
           avatar_url?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          is_demo?: boolean
           locale?: string
           onboarding_completed?: boolean
           phone?: string | null
@@ -1716,7 +1722,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_ai_extractions: { Args: never; Returns: number }
+      is_demo_user: { Args: never; Returns: boolean }
     }
     Enums: {
       access_request_status: "pending" | "approved" | "rejected" | "expired"
