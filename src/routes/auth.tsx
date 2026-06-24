@@ -299,24 +299,54 @@ function SignUpCard() {
 
   async function onSubmit(values: z.infer<typeof signUpSchema>) {
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { full_name: values.fullName },
-      },
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Registrazione fallita", { description: error.message });
-      return;
+    try {
+      // Se l'utente è anonimo (modalità prova) → upgrade dell'account esistente,
+      // così i dati demo restano collegati allo stesso auth.uid.
+      const { data: current } = await supabase.auth.getUser();
+      const isAnon = !!current.user?.is_anonymous;
+
+      if (isAnon && current.user) {
+        const { error: updErr } = await supabase.auth.updateUser({
+          email: values.email,
+          password: values.password,
+          data: { full_name: values.fullName },
+        });
+        if (updErr) {
+          toast.error("Registrazione fallita", { description: updErr.message });
+          return;
+        }
+        // Il profilo non è più demo
+        await supabase
+          .from("profiles")
+          .update({ is_demo: false, full_name: values.fullName, email: values.email })
+          .eq("id", current.user.id);
+
+        toast.success("Account creato!", {
+          description: "I tuoi dati di prova sono stati salvati.",
+        });
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: values.fullName },
+        },
+      });
+      if (error) {
+        toast.error("Registrazione fallita", { description: error.message });
+        return;
+      }
+      toast.success("Account creato!", {
+        description: "Controlla la tua email per confermare e accedere.",
+      });
+      navigate({ to: "/dashboard", replace: true });
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Account creato!", {
-      description: "Controlla la tua email per confermare e accedere.",
-    });
-    // Se la conferma email è disabilitata, l'utente è già loggato
-    navigate({ to: "/dashboard", replace: true });
   }
 
   return (
