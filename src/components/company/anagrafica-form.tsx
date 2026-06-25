@@ -19,7 +19,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-import { lookupVatNumber } from "@/lib/vat-lookup.functions";
+import { lookupVatNumber, requestCompanyVisuraPdf } from "@/lib/vat-lookup.functions";
 import type { NormalizedCompanyData, VatLookupResult } from "@/lib/vat-lookup.functions";
 import { extractVisuraData, type VisuraExtras } from "@/lib/visura-extraction.functions";
 
@@ -177,8 +177,10 @@ export type AnagraficaFormProps = {
 export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
   const extractVisura = useServerFn(extractVisuraData);
+  const downloadVisura = useServerFn(requestCompanyVisuraPdf);
   const [verifying, setVerifying] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [downloadingVisura, setDownloadingVisura] = useState(false);
   const [lastResult, setLastResult] = useState<VatLookupResult | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -205,11 +207,12 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
         onChange(merged, mergedSources);
         onVerified?.(result.provider);
         // Inoltra dipendenti e anno costituzione (se restituiti dall'API)
-        if (result.data.employees_count != null || result.data.founded_year != null) {
+        if (result.data.employees_count != null || result.data.founded_year != null || result.data.ecofin) {
           onExtras?.({
             founded_year: result.data.founded_year ?? null,
             employees_count: result.data.employees_count ?? null,
             iso_certifications: [],
+            ecofin: result.data.ecofin ?? null,
           });
         }
         setAdvancedOpen(true);
