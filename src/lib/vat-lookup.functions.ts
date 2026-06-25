@@ -65,6 +65,7 @@ interface VatProvider {
  */
 class OpenApiProvider implements VatProvider {
   readonly name = "openapi";
+  lastRaw: Record<string, unknown> | null = null;
   constructor(private token: string) {}
 
   async lookup(vat: string): Promise<VatLookupResult> {
