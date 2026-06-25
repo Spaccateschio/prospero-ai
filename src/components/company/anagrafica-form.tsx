@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ChevronDown, FileUp, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, FileUp, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -307,6 +307,37 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
     } finally {
       setExtracting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDownloadVisura() {
+    const vat = (values.vat ?? "").trim();
+    if (!vat || vat.length < 8) {
+      toast.error("Inserisci una Partita IVA valida per scaricare la visura");
+      return;
+    }
+    setDownloadingVisura(true);
+    try {
+      const result = await downloadVisura({ data: { vat } });
+      console.log("[visura-pdf] result", result);
+      if (result.status === "success") {
+        window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+        toast.success("Visura disponibile", { description: "Apertura del PDF in nuova scheda." });
+      } else if (result.status === "pending") {
+        toast.info("Richiesta in elaborazione", {
+          description: `${result.message} (ID: ${result.requestId}). Riprova tra qualche minuto.`,
+        });
+      } else {
+        toast.warning("Visura non disponibile", {
+          description: `${result.message} ${result.raw ? "Dettagli in console." : ""}`.trim(),
+        });
+      }
+    } catch (err) {
+      toast.error("Errore richiesta visura", {
+        description: err instanceof Error ? err.message : "Imprevisto durante la richiesta.",
+      });
+    } finally {
+      setDownloadingVisura(false);
     }
   }
 
