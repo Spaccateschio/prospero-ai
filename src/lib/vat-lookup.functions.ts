@@ -25,6 +25,10 @@ export type NormalizedCompanyData = {
   province?: string | null;
   region?: string | null;
   zip_code?: string | null;
+  /** Numero dipendenti (se restituito dal provider) */
+  employees_count?: number | null;
+  /** Anno di costituzione (se restituito) */
+  founded_year?: number | null;
 };
 
 export type VatLookupResult =
