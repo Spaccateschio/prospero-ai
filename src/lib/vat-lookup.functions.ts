@@ -48,6 +48,7 @@ export type VatLookupResult =
 
 interface VatProvider {
   readonly name: string;
+  lastRaw?: Record<string, unknown> | null;
   lookup(vat: string): Promise<VatLookupResult>;
 }
 
