@@ -370,6 +370,25 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
           </Button>
         </div>
 
+        {/* Scarica visura camerale ufficiale (richiede pacchetto Visure attivo) */}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Scarica la visura camerale ufficiale (PDF).</span>{" "}
+            Richiede il pacchetto Visure attivo sull'account OpenAPI: se non è attivo, vedrai un avviso.
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={downloadingVisura || !values.vat}
+            onClick={handleDownloadVisura}
+          >
+            {downloadingVisura ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Scarica visura PDF
+          </Button>
+        </div>
+
+
         {/* Upload visura camerale */}
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">
           <div className="text-xs text-muted-foreground">
