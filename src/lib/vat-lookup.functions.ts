@@ -66,48 +66,62 @@ class OpenApiProvider implements VatProvider {
   constructor(private token: string) {}
 
   async lookup(vat: string): Promise<VatLookupResult> {
-    try {
-      const url = `https://imprese.openapi.com/advance/${encodeURIComponent(vat)}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          Accept: "application/json",
-        },
-      });
+    // Endpoint corretto OpenAPI.it — servizio Imprese:
+    // https://company.openapi.com/IT-advance/{vat}  (in alternativa IT-start)
+    const endpoints = [
+      `https://company.openapi.com/IT-advance/${encodeURIComponent(vat)}`,
+      `https://company.openapi.com/IT-start/${encodeURIComponent(vat)}`,
+    ];
 
-      if (res.status === 404) {
-        return { status: "not_found", provider: this.name, message: "Partita IVA non trovata" };
-      }
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
+    let lastError = "Errore di rete";
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (res.status === 404) {
+          return { status: "not_found", provider: this.name, message: "Partita IVA non trovata" };
+        }
+        if (res.status === 401 || res.status === 403) {
+          const text = await res.text().catch(() => "");
+          return {
+            status: "error",
+            provider: this.name,
+            message: `Autenticazione OpenAPI fallita (${res.status}). Verifica il token. ${text.slice(0, 200)}`,
+          };
+        }
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          lastError = `OpenAPI ${res.status}: ${text.slice(0, 200) || res.statusText}`;
+          continue; // prova endpoint successivo
+        }
+
+        const json = (await res.json()) as Record<string, unknown>;
+        const mapped = mapOpenApiPayload(vat, json);
+        if (!mapped) {
+          lastError = "Risposta vuota dal provider";
+          continue;
+        }
         return {
-          status: "error",
+          status: "success",
           provider: this.name,
-          message: `OpenAPI ${res.status}: ${text.slice(0, 200) || res.statusText}`,
+          data: mapped,
+          verifiedFields: verifiedFieldsOf(mapped),
         };
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : "Errore di rete";
       }
-
-      const json = (await res.json()) as Record<string, unknown>;
-      const mapped = mapOpenApiPayload(vat, json);
-      if (!mapped) {
-        return { status: "not_found", provider: this.name, message: "Risposta vuota" };
-      }
-      return {
-        status: "success",
-        provider: this.name,
-        data: mapped,
-        verifiedFields: verifiedFieldsOf(mapped),
-      };
-    } catch (err) {
-      return {
-        status: "error",
-        provider: this.name,
-        message: err instanceof Error ? err.message : "Errore di rete",
-      };
     }
+
+    return { status: "error", provider: this.name, message: lastError };
   }
 }
+
 
 /**
  * MockProvider — usato quando non è configurato alcun provider esterno.
