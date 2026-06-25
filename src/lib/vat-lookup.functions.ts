@@ -105,6 +105,7 @@ class OpenApiProvider implements VatProvider {
         }
 
         const json = (await res.json()) as Record<string, unknown>;
+        this.lastRaw = json;
         const mapped = mapOpenApiPayload(vat, json);
         if (!mapped) {
           lastError = "Risposta vuota dal provider";
@@ -115,6 +116,7 @@ class OpenApiProvider implements VatProvider {
           provider: this.name,
           data: mapped,
           verifiedFields: verifiedFieldsOf(mapped),
+          rawKeys: collectKeys(json),
         };
       } catch (err) {
         lastError = err instanceof Error ? err.message : "Errore di rete";
