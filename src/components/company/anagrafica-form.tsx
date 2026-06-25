@@ -204,9 +204,20 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
         const { values: merged, sources: mergedSources } = applyVerifiedData(values, sources, result.data);
         onChange(merged, mergedSources);
         onVerified?.(result.provider);
+        // Inoltra dipendenti e anno costituzione (se restituiti dall'API)
+        if (result.data.employees_count != null || result.data.founded_year != null) {
+          onExtras?.({
+            founded_year: result.data.founded_year ?? null,
+            employees_count: result.data.employees_count ?? null,
+            iso_certifications: [],
+          });
+        }
         setAdvancedOpen(true);
+        const extraNote = result.data.employees_count != null
+          ? ` (incluso n. dipendenti: ${result.data.employees_count})`
+          : "";
         toast.success(`Dati compilati da ${result.provider}`, {
-          description: `${result.verifiedFields.length} campi precompilati — rivedi i dati avanzati`,
+          description: `${result.verifiedFields.length} campi precompilati${extraNote} — rivedi i dati avanzati`,
         });
       } else if (result.status === "not_found") {
         toast.warning("Partita IVA non trovata", {
