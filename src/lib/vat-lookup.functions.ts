@@ -155,33 +155,6 @@ function selectProvider(): VatProvider {
 
 // Mapping helpers ------------------------------------------------------------
 
-function pickString(...values: unknown[]): string | null {
-  for (const v of values) {
-    if (typeof v === "string" && v.trim().length > 0) return v.trim();
-  }
-  return null;
-}
-
-function pickPath(obj: unknown, path: string): unknown {
-  if (!obj || typeof obj !== "object") return undefined;
-  return path.split(".").reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === "object" && key in (acc as Record<string, unknown>)) {
-      return (acc as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, obj);
-}
-
-function pickNumber(...values: unknown[]): number | null {
-  for (const v of values) {
-    if (typeof v === "number" && Number.isFinite(v)) return v;
-    if (typeof v === "string" && v.trim().length > 0) {
-      const n = Number(v.replace(/[^\d.-]/g, ""));
-      if (Number.isFinite(n)) return n;
-    }
-  }
-  return null;
-}
 
 function collectKeys(obj: unknown, depth = 0, max = 3, acc: Set<string> = new Set()): string[] {
   if (!obj || typeof obj !== "object" || depth > max) return Array.from(acc);
