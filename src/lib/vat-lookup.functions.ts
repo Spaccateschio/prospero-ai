@@ -346,7 +346,7 @@ export const requestCompanyVisuraPdf = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<VisuraPdfResult> => {
     const token = process.env.OPENAPI_COMPANY_TOKEN ?? process.env.OPENAPI_VAT_TOKEN;
     if (!token) {
-      return { status: "error", provider: "openapi", message: "Token OpenAPI non configurato." };
+      return { status: "error", provider: "openapi", message: "Token OpenAPI non configurato.", raw: null };
     }
     const cleanVat = data.vat.toUpperCase().replace(/^IT/, "");
 
