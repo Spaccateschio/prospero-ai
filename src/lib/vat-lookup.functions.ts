@@ -323,14 +323,20 @@ export const lookupVatNumber = createServerFn({ method: "POST" })
     const cleanVat = data.vat.toUpperCase().replace(/^IT/, "");
 
     const result = await provider.lookup(cleanVat);
+    const rawJson = provider.lastRaw ?? null;
 
-    // Audit: salva sempre la chiamata (anche se fallita)
+    // Log keys for debug visibility in server logs
+    if (rawJson) {
+      try { console.log("[vat-lookup] OpenAPI raw keys:", collectKeys(rawJson).slice(0, 60)); } catch {}
+    }
+
+    // Audit: salva sempre la chiamata con la risposta RAW dell'API (per ispezione)
     await supabase.from("company_verifications").insert({
       company_id: data.company_id ?? null,
       vat_queried: cleanVat,
       provider: result.provider,
       status: result.status,
-      raw_response: result.status === "success" ? (JSON.parse(JSON.stringify(result.data)) as never) : null,
+      raw_response: rawJson ? (JSON.parse(JSON.stringify(rawJson)) as never) : null,
       error_message: result.status !== "success" ? result.message : null,
       requested_by: userId,
     });
