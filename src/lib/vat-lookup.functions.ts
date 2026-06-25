@@ -152,6 +152,17 @@ function pickPath(obj: unknown, path: string): unknown {
   }, obj);
 }
 
+function pickNumber(...values: unknown[]): number | null {
+  for (const v of values) {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string" && v.trim().length > 0) {
+      const n = Number(v.replace(/[^\d.-]/g, ""));
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
 function mapOpenApiPayload(vat: string, payload: Record<string, unknown>): NormalizedCompanyData | null {
   // Le risposte OpenAPI tipicamente hanno { success, message, data: { ... } }
   // o { data: [ { ... } ] }. Gestiamo entrambe.
@@ -161,6 +172,16 @@ function mapOpenApiPayload(vat: string, payload: Record<string, unknown>): Norma
 
   const address = (root.address ?? root.indirizzo ?? root.sede_legale ?? {}) as Record<string, unknown>;
   const ateco = (root.ateco ?? root.activity_code ?? {}) as Record<string, unknown>;
+  const employees = (root.employees ?? root.dipendenti ?? {}) as Record<string, unknown> | number | string;
+
+  const activityStart = pickString(
+    root.activity_start, root.activity_start_date, root.data_inizio_attivita, root.start_date,
+  );
+  const foundedYear = pickNumber(
+    root.founded_year, root.anno_costituzione,
+    pickPath(root, "constitution.year"),
+    activityStart ? activityStart.slice(0, 4) : null,
+  );
 
   return {
     vat,
@@ -174,14 +195,20 @@ function mapOpenApiPayload(vat: string, payload: Record<string, unknown>): Norma
     ateco: pickString(ateco.code, root.ateco_code, root.codice_ateco),
     ateco_description: pickString(ateco.description, root.ateco_description, root.descrizione_ateco),
     activity_status: pickString(root.status, root.activity_status, root.stato_attivita),
-    activity_start_date: pickString(
-      root.activity_start, root.activity_start_date, root.data_inizio_attivita, root.start_date,
-    ),
+    activity_start_date: activityStart,
     legal_address_street: pickString(address.street, address.toponym, address.via, address.indirizzo),
     city: pickString(address.city, address.town, address.comune),
     province: pickString(address.province, address.provincia, address.prov),
     region: pickString(address.region, address.regione),
     zip_code: pickString(address.zip_code, address.postcode, address.cap),
+    employees_count: pickNumber(
+      typeof employees === "object" ? (employees as Record<string, unknown>).count : employees,
+      typeof employees === "object" ? (employees as Record<string, unknown>).total : null,
+      root.employees_count,
+      root.numero_dipendenti,
+      pickPath(root, "employees.last_value"),
+    ),
+    founded_year: foundedYear,
   };
 }
 
