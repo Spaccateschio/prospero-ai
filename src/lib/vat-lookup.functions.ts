@@ -183,51 +183,110 @@ function pickNumber(...values: unknown[]): number | null {
   return null;
 }
 
+function collectKeys(obj: unknown, depth = 0, max = 3, acc: Set<string> = new Set()): string[] {
+  if (!obj || typeof obj !== "object" || depth > max) return Array.from(acc);
+  if (Array.isArray(obj)) {
+    for (const it of obj.slice(0, 2)) collectKeys(it, depth + 1, max, acc);
+    return Array.from(acc);
+  }
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    acc.add(k);
+    if (v && typeof v === "object") collectKeys(v, depth + 1, max, acc);
+  }
+  return Array.from(acc);
+}
+
+/** Deeply walk obj/arrays looking for the first matching key (case-insensitive). */
+function deepFind(obj: unknown, keys: string[], depth = 0): unknown {
+  if (obj == null || depth > 6) return undefined;
+  const lowered = keys.map((k) => k.toLowerCase());
+  if (Array.isArray(obj)) {
+    for (const it of obj) {
+      const r = deepFind(it, keys, depth + 1);
+      if (r != null && r !== "") return r;
+    }
+    return undefined;
+  }
+  if (typeof obj === "object") {
+    const rec = obj as Record<string, unknown>;
+    for (const [k, v] of Object.entries(rec)) {
+      if (lowered.includes(k.toLowerCase()) && v != null && v !== "") return v;
+    }
+    for (const v of Object.values(rec)) {
+      const r = deepFind(v, keys, depth + 1);
+      if (r != null && r !== "") return r;
+    }
+  }
+  return undefined;
+}
+
+function asString(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) return v.trim();
+  if (typeof v === "number") return String(v);
+  return null;
+}
+
+function asNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v.replace(/[^\d.-]/g, ""));
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
 function mapOpenApiPayload(vat: string, payload: Record<string, unknown>): NormalizedCompanyData | null {
-  // Le risposte OpenAPI tipicamente hanno { success, message, data: { ... } }
-  // o { data: [ { ... } ] }. Gestiamo entrambe.
+  // {success, data: {...}} | {data: [...]} | {...}
   const dataRaw = (payload.data ?? payload) as unknown;
-  const root = Array.isArray(dataRaw) ? (dataRaw[0] as Record<string, unknown> | undefined) : (dataRaw as Record<string, unknown>);
+  const root = Array.isArray(dataRaw) ? (dataRaw[0] as unknown) : dataRaw;
   if (!root || typeof root !== "object") return null;
 
-  const address = (root.address ?? root.indirizzo ?? root.sede_legale ?? {}) as Record<string, unknown>;
-  const ateco = (root.ateco ?? root.activity_code ?? {}) as Record<string, unknown>;
-  const employees = (root.employees ?? root.dipendenti ?? {}) as Record<string, unknown> | number | string;
+  // legal address subtree (try multiple shapes)
+  const address =
+    (deepFind(root, ["address", "indirizzo", "sede_legale", "registered_address", "legal_address"]) as
+      | Record<string, unknown>
+      | undefined) ?? (root as Record<string, unknown>);
 
-  const activityStart = pickString(
-    root.activity_start, root.activity_start_date, root.data_inizio_attivita, root.start_date,
+  const activityStart = asString(
+    deepFind(root, [
+      "activity_start", "activity_start_date", "data_inizio_attivita",
+      "start_date", "data_iscrizione", "registration_date",
+    ]),
   );
-  const foundedYear = pickNumber(
-    root.founded_year, root.anno_costituzione,
-    pickPath(root, "constitution.year"),
-    activityStart ? activityStart.slice(0, 4) : null,
-  );
+  const foundedYear =
+    asNumber(deepFind(root, ["founded_year", "anno_costituzione", "year_of_constitution"])) ??
+    (activityStart ? asNumber(activityStart.slice(0, 4)) : null);
+
+  const employeesRaw = deepFind(root, [
+    "employees", "dipendenti", "employees_count", "numero_dipendenti", "n_dipendenti",
+  ]);
+  const employees =
+    asNumber(employeesRaw) ??
+    asNumber(deepFind(employeesRaw, ["count", "total", "last_value", "value", "number"]));
 
   return {
     vat,
-    fiscal_code: pickString(root.tax_code, root.codice_fiscale, root.cf),
-    legal_name: pickString(root.company_name, root.denomination, root.denominazione, root.ragione_sociale),
-    legal_form: pickString(root.company_type, root.legal_form, root.forma_giuridica),
-    pec_email: pickString(root.pec, root.pec_email, pickPath(root, "contacts.pec")),
-    sdi_code: pickString(root.sdi_code, root.codice_destinatario, root.sdi),
-    rea_code: pickString(root.rea, root.rea_code, pickPath(root, "rea.code")),
-    chamber_of_commerce: pickString(root.cciaa, root.chamber_of_commerce, pickPath(root, "rea.chamber")),
-    ateco: pickString(ateco.code, root.ateco_code, root.codice_ateco),
-    ateco_description: pickString(ateco.description, root.ateco_description, root.descrizione_ateco),
-    activity_status: pickString(root.status, root.activity_status, root.stato_attivita),
-    activity_start_date: activityStart,
-    legal_address_street: pickString(address.street, address.toponym, address.via, address.indirizzo),
-    city: pickString(address.city, address.town, address.comune),
-    province: pickString(address.province, address.provincia, address.prov),
-    region: pickString(address.region, address.regione),
-    zip_code: pickString(address.zip_code, address.postcode, address.cap),
-    employees_count: pickNumber(
-      typeof employees === "object" ? (employees as Record<string, unknown>).count : employees,
-      typeof employees === "object" ? (employees as Record<string, unknown>).total : null,
-      root.employees_count,
-      root.numero_dipendenti,
-      pickPath(root, "employees.last_value"),
+    fiscal_code: asString(deepFind(root, ["tax_code", "codice_fiscale", "cf", "fiscal_code"])),
+    legal_name: asString(
+      deepFind(root, ["company_name", "denomination", "denominazione", "ragione_sociale", "name", "business_name"]),
     ),
+    legal_form: asString(deepFind(root, ["company_type", "legal_form", "forma_giuridica", "natura_giuridica"])),
+    pec_email: asString(deepFind(root, ["pec", "pec_email", "pec_mail", "indirizzo_pec"])),
+    sdi_code: asString(deepFind(root, ["sdi_code", "codice_destinatario", "sdi", "codice_sdi"])),
+    rea_code: asString(deepFind(root, ["rea", "rea_code", "numero_rea", "n_rea"])),
+    chamber_of_commerce: asString(deepFind(root, ["cciaa", "chamber_of_commerce", "chamber", "camera_commercio"])),
+    ateco: asString(deepFind(root, ["ateco_code", "codice_ateco", "ateco"])),
+    ateco_description: asString(deepFind(root, ["ateco_description", "descrizione_ateco", "activity_description"])),
+    activity_status: asString(deepFind(root, ["status", "activity_status", "stato_attivita", "stato"])),
+    activity_start_date: activityStart,
+    legal_address_street: asString(
+      deepFind(address, ["street", "toponym", "via", "indirizzo", "address", "street_name"]),
+    ),
+    city: asString(deepFind(address, ["city", "town", "comune", "municipality"])),
+    province: asString(deepFind(address, ["province", "provincia", "prov", "province_code"])),
+    region: asString(deepFind(address, ["region", "regione"])),
+    zip_code: asString(deepFind(address, ["zip_code", "postcode", "cap", "postal_code", "zip"])),
+    employees_count: employees,
     founded_year: foundedYear,
   };
 }
