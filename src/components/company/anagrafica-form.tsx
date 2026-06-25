@@ -204,6 +204,12 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
       setLastResult(result);
       if (result.status === "success") {
         const { values: merged, sources: mergedSources } = applyVerifiedData(values, sources, result.data);
+        // Inferisci forma giuridica (company_type) da legal_form o ragione sociale
+        const inferred = inferCompanyType(result.data.legal_form ?? result.data.legal_name);
+        if (inferred && !merged.company_type) {
+          merged.company_type = inferred;
+          mergedSources.company_type = "external";
+        }
         onChange(merged, mergedSources);
         onVerified?.(result.provider);
         // Inoltra dipendenti e anno costituzione (se restituiti dall'API)
