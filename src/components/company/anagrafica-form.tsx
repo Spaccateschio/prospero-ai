@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, ChevronDown, FileUp, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, FileUp, Loader2, Search, ShieldAlert, UserPen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-import { lookupVatNumber } from "@/lib/vat-lookup.functions";
+import { lookupVatNumber, requestCompanyVisuraPdf } from "@/lib/vat-lookup.functions";
 import type { NormalizedCompanyData, VatLookupResult } from "@/lib/vat-lookup.functions";
 import { extractVisuraData, type VisuraExtras } from "@/lib/visura-extraction.functions";
 
@@ -177,8 +177,10 @@ export type AnagraficaFormProps = {
 export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras, compact = false }: AnagraficaFormProps) {
   const lookup = useServerFn(lookupVatNumber);
   const extractVisura = useServerFn(extractVisuraData);
+  const downloadVisura = useServerFn(requestCompanyVisuraPdf);
   const [verifying, setVerifying] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [downloadingVisura, setDownloadingVisura] = useState(false);
   const [lastResult, setLastResult] = useState<VatLookupResult | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -205,11 +207,12 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
         onChange(merged, mergedSources);
         onVerified?.(result.provider);
         // Inoltra dipendenti e anno costituzione (se restituiti dall'API)
-        if (result.data.employees_count != null || result.data.founded_year != null) {
+        if (result.data.employees_count != null || result.data.founded_year != null || result.data.ecofin) {
           onExtras?.({
             founded_year: result.data.founded_year ?? null,
             employees_count: result.data.employees_count ?? null,
             iso_certifications: [],
+            ecofin: result.data.ecofin ?? null,
           });
         }
         setAdvancedOpen(true);
@@ -307,6 +310,37 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
     }
   }
 
+  async function handleDownloadVisura() {
+    const vat = (values.vat ?? "").trim();
+    if (!vat || vat.length < 8) {
+      toast.error("Inserisci una Partita IVA valida per scaricare la visura");
+      return;
+    }
+    setDownloadingVisura(true);
+    try {
+      const result = await downloadVisura({ data: { vat } });
+      console.log("[visura-pdf] result", result);
+      if (result.status === "success") {
+        window.open(result.downloadUrl, "_blank", "noopener,noreferrer");
+        toast.success("Visura disponibile", { description: "Apertura del PDF in nuova scheda." });
+      } else if (result.status === "pending") {
+        toast.info("Richiesta in elaborazione", {
+          description: `${result.message} (ID: ${result.requestId}). Riprova tra qualche minuto.`,
+        });
+      } else {
+        toast.warning("Visura non disponibile", {
+          description: `${result.message} ${result.raw ? "Dettagli in console." : ""}`.trim(),
+        });
+      }
+    } catch (err) {
+      toast.error("Errore richiesta visura", {
+        description: err instanceof Error ? err.message : "Imprevisto durante la richiesta.",
+      });
+    } finally {
+      setDownloadingVisura(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Verifica P.IVA */}
@@ -335,6 +369,25 @@ export function AnagraficaForm({ values, sources, onChange, onVerified, onExtras
             Verifica e compila
           </Button>
         </div>
+
+        {/* Scarica visura camerale ufficiale (richiede pacchetto Visure attivo) */}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Scarica la visura camerale ufficiale (PDF).</span>{" "}
+            Richiede il pacchetto Visure attivo sull'account OpenAPI: se non è attivo, vedrai un avviso.
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={downloadingVisura || !values.vat}
+            onClick={handleDownloadVisura}
+          >
+            {downloadingVisura ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Scarica visura PDF
+          </Button>
+        </div>
+
 
         {/* Upload visura camerale */}
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border border-dashed bg-background/40 p-3">

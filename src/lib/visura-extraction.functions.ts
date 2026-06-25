@@ -2,12 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { NormalizedCompanyData } from "@/lib/vat-lookup.functions";
+import type { NormalizedCompanyData, EcofinSummary } from "@/lib/vat-lookup.functions";
 
 export type VisuraExtras = {
   founded_year: number | null;
   employees_count: number | null;
   iso_certifications: string[];
+  ecofin?: EcofinSummary | null;
 };
 
 export type VisuraExtractionResult =

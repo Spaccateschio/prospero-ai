@@ -98,6 +98,8 @@ type WizardData = {
   annual_revenue?: number;
   founded_year?: number;
   iso_certifications: string[];
+  // bilancio sintetico da OpenAPI ecofin
+  ecofin?: VisuraExtras["ecofin"];
   // step 6
   iva_frequency?: "mensile" | "trimestrale" | "annuale";
 };
@@ -239,6 +241,9 @@ function OnboardingWizard() {
                     ...d,
                     founded_year: extras.founded_year ?? d.founded_year,
                     employees_count: extras.employees_count ?? d.employees_count,
+                    annual_revenue:
+                      extras.ecofin?.turnover != null ? extras.ecofin.turnover : d.annual_revenue,
+                    ecofin: extras.ecofin ?? d.ecofin,
                     iso_certifications:
                       extras.iso_certifications.length > 0
                         ? Array.from(new Set([...(d.iso_certifications ?? []), ...extras.iso_certifications]))
@@ -319,6 +324,29 @@ function OnboardingWizard() {
                     } catch (err) {
                       // Non-bloccante: l'azienda è già creata
                       console.warn("saveCompanyAnagrafica failed", err);
+                    }
+
+                    // Salva bilancio sintetico da OpenAPI ecofin (se disponibile)
+                    if (merged.ecofin && merged.ecofin.year) {
+                      try {
+                        const e = merged.ecofin;
+                        const { error: bsErr } = await supabase.from("balance_sheets").insert({
+                          company_id: company.id,
+                          year: e.year as number,
+                          source_type: "openapi_ecofin",
+                          ricavi: e.turnover,
+                          patrimonio_netto: e.net_worth,
+                          dipendenti: merged.employees_count ?? null,
+                          extracted_data: {
+                            ecofin: e,
+                            note: "Bilancio sintetico da OpenAPI (pacchetto IT-marketing). Per il bilancio completo riclassificato serve il pacchetto IT-financialstatement.",
+                          } as never,
+                          confirmed: false,
+                        });
+                        if (bsErr) console.warn("balance_sheets insert failed", bsErr);
+                      } catch (err) {
+                        console.warn("balance_sheets insert exception", err);
+                      }
                     }
 
                     advanceTo(3);
