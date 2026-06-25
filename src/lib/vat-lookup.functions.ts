@@ -127,8 +127,9 @@ class MockProvider implements VatProvider {
 }
 
 function selectProvider(): VatProvider {
-  const openApi = process.env.OPENAPI_VAT_TOKEN;
-  if (openApi && openApi.trim().length > 0) return new OpenApiProvider(openApi.trim());
+  // Accetta sia il nuovo nome (OPENAPI_COMPANY_TOKEN) sia il vecchio (OPENAPI_VAT_TOKEN)
+  const token = process.env.OPENAPI_COMPANY_TOKEN ?? process.env.OPENAPI_VAT_TOKEN;
+  if (token && token.trim().length > 0) return new OpenApiProvider(token.trim());
   return new MockProvider();
 }
 
