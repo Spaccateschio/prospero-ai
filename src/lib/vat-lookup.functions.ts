@@ -322,9 +322,15 @@ export const lookupVatNumber = createServerFn({ method: "POST" })
 // -----------------------------------------------------------------------------
 
 export type VisuraPdfResult =
-  | { status: "success"; provider: string; downloadUrl: string; raw: unknown }
-  | { status: "pending"; provider: string; requestId: string; message: string; raw: unknown }
-  | { status: "error"; provider: string; message: string; raw?: unknown };
+  | { status: "success"; provider: string; downloadUrl: string; raw: string | null }
+  | { status: "pending"; provider: string; requestId: string; message: string; raw: string | null }
+  | { status: "error"; provider: string; message: string; raw: string | null };
+
+function serializeRaw(v: unknown): string | null {
+  if (v == null) return null;
+  if (typeof v === "string") return v.slice(0, 4000);
+  try { return JSON.stringify(v).slice(0, 4000); } catch { return null; }
+}
 
 export const requestCompanyVisuraPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -387,7 +393,7 @@ export const requestCompanyVisuraPdf = createServerFn({ method: "POST" })
           (asString(get(j, "data.pdf_url")) as string | null) ??
           (asString(get(j, "url")) as string | null);
         if (downloadUrl) {
-          return { status: "success", provider: "openapi", downloadUrl, raw: json };
+          return { status: "success", provider: "openapi", downloadUrl, raw: serializeRaw(json) };
         }
         const requestId =
           asString(get(j, "data.id")) ?? asString(get(j, "id")) ?? asString(get(j, "data.request_id"));
@@ -397,20 +403,19 @@ export const requestCompanyVisuraPdf = createServerFn({ method: "POST" })
             provider: "openapi",
             requestId,
             message: "Richiesta accettata. La visura sarà disponibile a breve.",
-            raw: json,
+            raw: serializeRaw(json),
           };
         }
-        // Risposta OK ma senza URL → ritorna comunque per ispezione
         return {
           status: "error",
           provider: "openapi",
           message: "Risposta ricevuta ma senza link di download. Verifica i dettagli in console.",
-          raw: json,
+          raw: serializeRaw(json),
         };
       } catch (err) {
         lastError = err instanceof Error ? err.message : "Errore di rete";
       }
     }
 
-    return { status: "error", provider: "openapi", message: lastError, raw: lastRaw };
+    return { status: "error", provider: "openapi", message: lastError, raw: serializeRaw(lastRaw) };
   });
