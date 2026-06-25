@@ -37,9 +37,10 @@ export type VatLookupResult =
       provider: string;
       data: NormalizedCompanyData;
       verifiedFields: string[];
+      raw?: unknown;
     }
-  | { status: "not_found"; provider: string; message: string }
-  | { status: "error"; provider: string; message: string };
+  | { status: "not_found"; provider: string; message: string; raw?: unknown }
+  | { status: "error"; provider: string; message: string; raw?: unknown };
 
 // -----------------------------------------------------------------------------
 // Provider implementations (server-only)
