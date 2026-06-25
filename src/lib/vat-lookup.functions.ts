@@ -66,11 +66,12 @@ class OpenApiProvider implements VatProvider {
   constructor(private token: string) {}
 
   async lookup(vat: string): Promise<VatLookupResult> {
-    // Endpoint corretto OpenAPI.it — servizio Imprese:
-    // https://company.openapi.com/IT-advance/{vat}  (in alternativa IT-start)
+    // Endpoint OpenAPI.it — servizio Company (pacchetti attuali):
+    // IT-marketing → anagrafica completa + dipendenti + ATECO + indirizzo
+    // IT-full      → visura camerale completa (fallback se marketing non incluso)
     const endpoints = [
-      `https://company.openapi.com/IT-advance/${encodeURIComponent(vat)}`,
-      `https://company.openapi.com/IT-start/${encodeURIComponent(vat)}`,
+      `https://company.openapi.com/IT-marketing/${encodeURIComponent(vat)}`,
+      `https://company.openapi.com/IT-full/${encodeURIComponent(vat)}`,
     ];
 
     let lastError = "Errore di rete";
@@ -85,20 +86,19 @@ class OpenApiProvider implements VatProvider {
         });
 
         if (res.status === 404) {
-          return { status: "not_found", provider: this.name, message: "Partita IVA non trovata" };
+          lastError = "Partita IVA non trovata";
+          continue;
         }
         if (res.status === 401 || res.status === 403) {
           const text = await res.text().catch(() => "");
-          return {
-            status: "error",
-            provider: this.name,
-            message: `Autenticazione OpenAPI fallita (${res.status}). Verifica il token. ${text.slice(0, 200)}`,
-          };
+          // 401/403 può significare: token non valido OPPURE pacchetto non incluso nell'abbonamento.
+          lastError = `OpenAPI ${res.status}: ${text.slice(0, 200) || res.statusText}. Verifica che il token sia valido e che il pacchetto sia attivo nel tuo abbonamento.`;
+          continue;
         }
         if (!res.ok) {
           const text = await res.text().catch(() => "");
           lastError = `OpenAPI ${res.status}: ${text.slice(0, 200) || res.statusText}`;
-          continue; // prova endpoint successivo
+          continue;
         }
 
         const json = (await res.json()) as Record<string, unknown>;
@@ -121,6 +121,7 @@ class OpenApiProvider implements VatProvider {
     return { status: "error", provider: this.name, message: lastError };
   }
 }
+
 
 
 /**
