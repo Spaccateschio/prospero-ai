@@ -98,6 +98,8 @@ type WizardData = {
   annual_revenue?: number;
   founded_year?: number;
   iso_certifications: string[];
+  // bilancio sintetico da OpenAPI ecofin
+  ecofin?: VisuraExtras["ecofin"];
   // step 6
   iva_frequency?: "mensile" | "trimestrale" | "annuale";
 };
@@ -239,6 +241,9 @@ function OnboardingWizard() {
                     ...d,
                     founded_year: extras.founded_year ?? d.founded_year,
                     employees_count: extras.employees_count ?? d.employees_count,
+                    annual_revenue:
+                      extras.ecofin?.turnover != null ? extras.ecofin.turnover : d.annual_revenue,
+                    ecofin: extras.ecofin ?? d.ecofin,
                     iso_certifications:
                       extras.iso_certifications.length > 0
                         ? Array.from(new Set([...(d.iso_certifications ?? []), ...extras.iso_certifications]))
