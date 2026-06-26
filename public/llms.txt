@@ -1,0 +1,10 @@
+# CFO AI
+
+> Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale in italiano.
+
+CFO AI è il Direttore Finanziario AI per le piccole e medie imprese italiane. Aiuta imprenditori e commercialisti a gestire flussi di cassa, monitorare costi (energia, carburanti, telco, banche), trovare bandi e incentivi rilevanti, simulare scenari finanziari e ricevere suggerimenti operativi da un consulente AI dedicato.
+
+## Pagine
+
+- [Home](/): Panoramica della piattaforma CFO AI.
+- [Accedi o registrati](/auth): Crea un account o accedi con email o Google; modalità prova senza registrazione.
