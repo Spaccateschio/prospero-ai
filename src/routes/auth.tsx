@@ -127,37 +127,65 @@ function AuthPage() {
 
       {/* Form side */}
       <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-4">
-          <Tabs defaultValue="sign-in" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="sign-in">Accedi</TabsTrigger>
-              <TabsTrigger value="sign-up">Registrati</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="sign-in" className="mt-4">
-              <SignInCard />
-            </TabsContent>
-            <TabsContent value="sign-up" className="mt-4">
-              <SignUpCard />
-            </TabsContent>
-          </Tabs>
-
-          <div className="relative">
-            <Separator />
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-              oppure
-            </span>
+        <div className="w-full max-w-md space-y-5">
+          <div className="space-y-1.5 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">Accedi in un click</h2>
+            <p className="text-sm text-muted-foreground">
+              Usa Google per entrare subito in dashboard. Nessun form da compilare.
+            </p>
           </div>
+
+          <GoogleButton label="Continua con Google" />
 
           <DemoButton />
           <p className="text-center text-xs text-muted-foreground">
             Nessuna registrazione richiesta — esplora con dati di esempio.
           </p>
+
+          <div className="relative pt-2">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              oppure usa email
+            </span>
+          </div>
+
+          <EmailAuthSection />
         </div>
       </div>
     </div>
   );
 }
+
+function EmailAuthSection() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        className="w-full text-sm text-muted-foreground"
+        onClick={() => setOpen(true)}
+      >
+        Accedi o registrati con email
+      </Button>
+    );
+  }
+  return (
+    <Tabs defaultValue="sign-in" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="sign-in">Accedi</TabsTrigger>
+        <TabsTrigger value="sign-up">Registrati</TabsTrigger>
+      </TabsList>
+      <TabsContent value="sign-in" className="mt-4">
+        <SignInCard />
+      </TabsContent>
+      <TabsContent value="sign-up" className="mt-4">
+        <SignUpCard />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
 
 function DemoButton() {
   const navigate = useNavigate();
