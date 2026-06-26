@@ -81,6 +81,8 @@ function GoogleIcon() {
 function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
+      <h1 className="sr-only">Accedi a CFO AI — il tuo Direttore Finanziario AI</h1>
+
       {/* Hero side */}
       <div className="hidden flex-col justify-between bg-gradient-to-br from-primary/15 via-background to-background p-10 lg:flex">
         <div className="flex items-center gap-2">
