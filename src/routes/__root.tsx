@@ -79,27 +79,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CFO AI — Il tuo Direttore Finanziario AI" },
+      { title: "CFO AI — Il tuo Direttore Finanziario AI per PMI italiane" },
       {
         name: "description",
         content:
-          "Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale.",
+          "Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale in italiano.",
       },
       { name: "author", content: "CFO AI" },
-      { property: "og:title", content: "CFO AI — Il tuo Direttore Finanziario AI" },
+      { property: "og:site_name", content: "CFO AI" },
+      { property: "og:title", content: "CFO AI — Il tuo Direttore Finanziario AI per PMI italiane" },
       {
         property: "og:description",
         content:
           "Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "CFO AI — Il tuo Direttore Finanziario AI" },
-      { name: "description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
-      { property: "og:description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
-      { name: "twitter:description", content: "AI-powered CFO platform for Italian SMEs, offering financial insights, cost optimization, and growth opportunities." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22d961af-064a-47c9-8da2-09747fa3bbcf/id-preview-d4f515e0--bd534a11-ffe4-4fce-8ebb-aa2a4aceb8f9.lovable.app-1782228372833.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22d961af-064a-47c9-8da2-09747fa3bbcf/id-preview-d4f515e0--bd534a11-ffe4-4fce-8ebb-aa2a4aceb8f9.lovable.app-1782228372833.png" },
+      { property: "og:url", content: "https://prospero-ai.lovable.app/" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "CFO AI — Il tuo Direttore Finanziario AI per PMI italiane" },
+      {
+        name: "twitter:description",
+        content:
+          "Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -111,7 +113,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "CFO AI",
+              url: "https://prospero-ai.lovable.app",
+              description:
+                "Piattaforma AI per PMI italiane: cash flow, bilanci, fiscalità, bandi, simulazioni e consulente CFO virtuale.",
+            },
+            {
+              "@type": "WebSite",
+              name: "CFO AI",
+              url: "https://prospero-ai.lovable.app",
+              inLanguage: "it-IT",
+            },
+          ],
+        }),
+      },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

@@ -49,7 +49,7 @@ export function TopBar() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full" aria-label="Menu profilo">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="text-xs">{initials || "?"}</AvatarFallback>
               </Avatar>

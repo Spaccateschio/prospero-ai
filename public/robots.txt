@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /_authenticated/
+
+Sitemap: https://prospero-ai.lovable.app/sitemap.xml

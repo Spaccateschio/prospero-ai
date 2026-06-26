@@ -37,6 +37,25 @@ const signUpSchema = z.object({
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Accedi a CFO AI — Direttore Finanziario AI per PMI" },
+      {
+        name: "description",
+        content:
+          "Accedi o registrati a CFO AI: cash flow, bilanci, fiscalità, bandi e simulazioni per le PMI italiane in un'unica piattaforma.",
+      },
+      { property: "og:title", content: "Accedi a CFO AI — Direttore Finanziario AI per PMI" },
+      {
+        property: "og:description",
+        content:
+          "Accedi o registrati a CFO AI: piattaforma AI per la gestione finanziaria delle PMI italiane.",
+      },
+      { property: "og:url", content: "https://prospero-ai.lovable.app/auth" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://prospero-ai.lovable.app/auth" }],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     // Gli utenti anonimi (modalità prova) possono visitare /auth per registrarsi
@@ -46,6 +65,7 @@ export const Route = createFileRoute("/auth")({
   },
   component: AuthPage,
 });
+
 
 function GoogleIcon() {
   return (
@@ -61,6 +81,8 @@ function GoogleIcon() {
 function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
+      <h1 className="sr-only">Accedi a CFO AI — il tuo Direttore Finanziario AI</h1>
+
       {/* Hero side */}
       <div className="hidden flex-col justify-between bg-gradient-to-br from-primary/15 via-background to-background p-10 lg:flex">
         <div className="flex items-center gap-2">
