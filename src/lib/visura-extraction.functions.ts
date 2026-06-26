@@ -16,10 +16,10 @@ export type VisuraExtractionResult =
   | { status: "error"; message: string };
 
 const InputSchema = z.object({
-  /** PDF della visura codificato in base64 (senza prefisso data:...) */
-  pdf_base64: z.string().min(100),
+  /** PDF della visura codificato in base64 (senza prefisso data:...) ~7.5MB decoded */
+  pdf_base64: z.string().min(100).max(10_485_760),
   /** Nome file (per debug/log) */
-  filename: z.string().optional(),
+  filename: z.string().max(200).optional(),
 });
 
 const ITALIAN_PROVINCE_TO_REGION: Record<string, string> = {
