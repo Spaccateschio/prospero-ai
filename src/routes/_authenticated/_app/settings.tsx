@@ -33,15 +33,21 @@ function SettingsPage() {
   }
   if (!activeId || !active) {
     return (
-      <div className="p-6">
+      <div className="space-y-4 p-6">
         <Alert>
           <ShieldAlert className="h-4 w-4" />
-          <AlertTitle>Nessuna azienda selezionata</AlertTitle>
-          <AlertDescription>Crea o seleziona un'azienda per accedere alle impostazioni.</AlertDescription>
+          <AlertTitle>Nessuna azienda configurata</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>Configura la tua azienda per accedere a impostazioni, documenti e dati di prova.</span>
+            <Button asChild size="sm">
+              <Link to="/onboarding">Configura azienda</Link>
+            </Button>
+          </AlertDescription>
         </Alert>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6 p-6">
