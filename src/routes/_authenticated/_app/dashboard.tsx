@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  TrendingUp, Wallet, FileText, AlertCircle, Plus, Sparkles, Loader2,
+  TrendingUp, Wallet, FileText, AlertCircle, Plus, Sparkles, Loader2, Building2,
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,15 +37,37 @@ function DashboardPage() {
   }
   if (!activeId || !active) {
     return (
-      <div className="p-6">
+      <div className="space-y-6 p-6">
+        <header>
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Benvenuto in CFO AI</p>
+        </header>
         <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Nessuna azienda selezionata</AlertTitle>
-          <AlertDescription>Crea o seleziona un'azienda per vedere la dashboard.</AlertDescription>
+          <Building2 className="h-4 w-4" />
+          <AlertTitle>Configura la tua azienda per vedere i dati</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Aggiungi la tua azienda (P.IVA o visura) per popolare la dashboard con flussi di cassa, scadenze e KPI reali.
+            </span>
+            <Button asChild size="sm">
+              <Link to="/onboarding">Configura ora</Link>
+            </Button>
+          </AlertDescription>
         </Alert>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {["Cassa attuale", "Entrate (30g)", "Uscite (30g)", "Scadenze (7g)"].map((label) => (
+            <Card key={label} className="opacity-60">
+              <CardHeader>
+                <CardDescription>{label}</CardDescription>
+                <CardTitle className="text-2xl text-muted-foreground">—</CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6 p-6">
