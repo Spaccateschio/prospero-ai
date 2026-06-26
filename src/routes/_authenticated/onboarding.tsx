@@ -171,9 +171,20 @@ function OnboardingWizard() {
             <div className="text-sm font-semibold">CFO AI</div>
             <div className="text-[11px] text-muted-foreground">Configurazione iniziale</div>
           </div>
-          <div className="ml-auto text-xs text-muted-foreground">
-            Passo {step} di {STEPS.length}
+          <div className="ml-auto flex items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate({ to: "/dashboard" })}
+            >
+              Salta per ora
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Passo {step} di {STEPS.length}
+            </span>
           </div>
+
         </div>
       </header>
 
