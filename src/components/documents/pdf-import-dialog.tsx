@@ -120,6 +120,42 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       cancelledRef.current = false;
       setPreparing(true);
       const text = await extractPdfText(f);
+      const fallbackDir: "attiva" | "passiva" = hintDirection ?? "attiva";
+
+      // 1) Tentativo parser deterministico (Danea ed elenchi tabellari simili)
+      const deterministic: ParsedInvoice[] | null = parseDaneaInvoices(text, fallbackDir);
+
+      if (deterministic && deterministic.length > 0) {
+        const batches: ParsedInvoice[][] = [];
+        for (let i = 0; i < deterministic.length; i += BATCH_SIZE) {
+          batches.push(deterministic.slice(i, i + BATCH_SIZE));
+        }
+        const { job_id } = await startJob({
+          data: {
+            company_id: companyId,
+            filename: f.name,
+            hint_direction: hintDirection ?? null,
+            total_chunks: batches.length,
+          },
+        });
+        setJobId(job_id);
+        setPreparing(false);
+        toast.success(`Riconosciute ${deterministic.length} fatture dal PDF (parser veloce, niente AI)`);
+
+        for (let i = 0; i < batches.length; i++) {
+          if (cancelledRef.current) break;
+          try {
+            await processBatch({
+              data: { job_id, chunks_processed: 1, invoices: batches[i] },
+            });
+          } catch (err) {
+            console.error("[batch]", i, err);
+          }
+        }
+        return { total: batches.length };
+      }
+
+      // 2) Fallback: testo non riconosciuto → estrazione AI a chunk
       const chunks = chunkText(text, CHUNK_LINES);
       if (chunks.length === 0) throw new Error("Nessun testo estraibile dal PDF.");
       const { job_id } = await startJob({
@@ -133,7 +169,6 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       setJobId(job_id);
       setPreparing(false);
 
-      // Worker pool con concorrenza limitata
       let next = 0;
       const runWorker = async () => {
         while (true) {
@@ -144,7 +179,6 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
             await processChunk({ data: { job_id, chunk_index: idx, text: chunks[idx] } });
           } catch (err) {
             console.error("[chunk]", idx, err);
-            // Il server marca già il fallimento; qui continuiamo con gli altri
           }
         }
       };
