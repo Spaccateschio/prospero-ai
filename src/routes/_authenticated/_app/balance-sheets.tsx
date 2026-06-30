@@ -228,7 +228,7 @@ function BalanceSheetsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Bilanci caricati</CardTitle>
-          <CardDescription>Storico bilanci confermati per {active.name}.</CardDescription>
+          <CardDescription>Storico bilanci confermati per {active.company.name}.</CardDescription>
         </CardHeader>
         <CardContent>
           {loadingList ? (
