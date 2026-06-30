@@ -232,7 +232,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
             Importa {mode === "sales" ? "fatture emesse" : mode === "purchases" ? "fatture ricevute" : "documenti"} da PDF
           </DialogTitle>
           <DialogDescription>
-            Carica un PDF (fattura singola o elenco anche da centinaia di righe). L'AI estrae i dati a blocchi e li salva man mano.
+            Carica un PDF (fattura singola o elenco anche da centinaia di righe). Gli elenchi tabellari (Danea) vengono riconosciuti automaticamente con un parser veloce; altrimenti viene usata l'AI a blocchi.
           </DialogDescription>
         </DialogHeader>
 
