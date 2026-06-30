@@ -1144,6 +1144,7 @@ export type Database = {
           counterpart_vat: string | null
           created_at: string
           direction: Database["public"]["Enums"]["invoice_direction"]
+          document_type: Database["public"]["Enums"]["document_type"]
           due_date: string | null
           file_url: string | null
           id: string
@@ -1169,6 +1170,7 @@ export type Database = {
           counterpart_vat?: string | null
           created_at?: string
           direction: Database["public"]["Enums"]["invoice_direction"]
+          document_type?: Database["public"]["Enums"]["document_type"]
           due_date?: string | null
           file_url?: string | null
           id?: string
@@ -1194,6 +1196,7 @@ export type Database = {
           counterpart_vat?: string | null
           created_at?: string
           direction?: Database["public"]["Enums"]["invoice_direction"]
+          document_type?: Database["public"]["Enums"]["document_type"]
           due_date?: string | null
           file_url?: string | null
           id?: string
@@ -1507,6 +1510,56 @@ export type Database = {
           },
         ]
       }
+      tax_payments: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_url: string | null
+          id: string
+          is_demo: boolean
+          notes: string | null
+          payment_date: string
+          protocol: string | null
+          sections: Json
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          payment_date: string
+          protocol?: string | null
+          sections?: Json
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          payment_date?: string
+          protocol?: string | null
+          sections?: Json
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_categories: {
         Row: {
           color: string
@@ -1745,6 +1798,12 @@ export type Database = {
         | "under_renegotiation"
       deadline_kind: "tax" | "contract" | "payment" | "admin" | "other"
       diagnosis_severity: "critical" | "warning" | "info"
+      document_type:
+        | "fattura"
+        | "parcella"
+        | "nota_credito"
+        | "ricevuta"
+        | "ddt"
       grant_type:
         | "fondo_perduto"
         | "credito_imposta"
@@ -1921,6 +1980,7 @@ export const Constants = {
       ],
       deadline_kind: ["tax", "contract", "payment", "admin", "other"],
       diagnosis_severity: ["critical", "warning", "info"],
+      document_type: ["fattura", "parcella", "nota_credito", "ricevuta", "ddt"],
       grant_type: [
         "fondo_perduto",
         "credito_imposta",
