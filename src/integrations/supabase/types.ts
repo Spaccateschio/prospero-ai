@@ -1135,6 +1135,62 @@ export type Database = {
           },
         ]
       }
+      import_jobs: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          error_message: string | null
+          failed_chunks: number
+          filename: string | null
+          hint_direction: string | null
+          id: string
+          inserted_count: number
+          processed_chunks: number
+          status: string
+          total_chunks: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          failed_chunks?: number
+          filename?: string | null
+          hint_direction?: string | null
+          id?: string
+          inserted_count?: number
+          processed_chunks?: number
+          status?: string
+          total_chunks?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          failed_chunks?: number
+          filename?: string | null
+          hint_direction?: string | null
+          id?: string
+          inserted_count?: number
+          processed_chunks?: number
+          status?: string
+          total_chunks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
