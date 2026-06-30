@@ -39,9 +39,8 @@ const POLL_MS = 1500;
 /** Estrae il testo da tutte le pagine usando pdfjs-dist nel browser. */
 async function extractPdfText(file: File): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  // @ts-expect-error worker entry esiste a runtime
-  const workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
-  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+  const workerMod = (await import("pdfjs-dist/build/pdf.worker.mjs?url")) as { default: string };
+  pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default;
 
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
