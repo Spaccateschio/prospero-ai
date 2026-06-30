@@ -163,7 +163,12 @@ export const processImportChunk = createServerFn({ method: "POST" })
       const newProcessed = (cur.processed_chunks ?? 0) + 1;
       const newFailed = (cur.failed_chunks ?? 0) + 1;
       const isDone = newProcessed >= (cur.total_chunks ?? 0);
-      const update: Record<string, unknown> = {
+      const update: {
+        processed_chunks: number;
+        failed_chunks: number;
+        status: string;
+        error_message?: string;
+      } = {
         processed_chunks: newProcessed,
         failed_chunks: newFailed,
         status: isDone ? "completed" : "processing",
