@@ -140,12 +140,104 @@ const ChunkSchema = z.object({
   text: z.string().min(1).max(80_000),
 });
 
+const InvoiceInputSchema = z.object({
+  document_type: z.enum(["fattura", "parcella", "nota_credito", "ricevuta", "ddt"]),
+  direction: z.enum(["attiva", "passiva"]),
+  number: z.string().max(60).nullable(),
+  counterpart_name: z.string().min(1).max(200),
+  counterpart_vat: z.string().max(40).nullable(),
+  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  amount: z.number().nullable(),
+  vat_amount: z.number().nullable(),
+  total_amount: z.number().positive(),
+});
+
+const BatchSchema = z.object({
+  job_id: z.string().uuid(),
+  chunks_processed: z.number().int().min(1).default(1),
+  invoices: z.array(InvoiceInputSchema).max(500),
+});
+
 type ChunkResult = {
   status: "ok" | "failed" | "skipped";
   inserted: number;
   parsed: number;
   message?: string;
 };
+
+export const processInvoicesBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => BatchSchema.parse(input))
+  .handler(async ({ data, context }): Promise<ChunkResult> => {
+    const supabase = context.supabase;
+    const { data: job } = await supabase
+      .from("import_jobs")
+      .select("id, company_id, status, processed_chunks, inserted_count, failed_chunks, total_chunks")
+      .eq("id", data.job_id)
+      .maybeSingle();
+    if (!job) return { status: "failed", inserted: 0, parsed: 0, message: "Job inesistente" };
+    if (job.status === "cancelled" || job.status === "failed") {
+      return { status: "skipped", inserted: 0, parsed: 0, message: "Job non attivo" };
+    }
+
+    let insertedCount = 0;
+    let failed = false;
+    let errorMessage: string | undefined;
+
+    if (data.invoices.length > 0) {
+      const rows = data.invoices.map((it) => ({
+        company_id: job.company_id,
+        document_type: it.document_type,
+        direction: it.direction,
+        number: it.number,
+        counterpart_name: it.counterpart_name,
+        counterpart_vat: it.counterpart_vat,
+        amount: it.amount ?? it.total_amount,
+        vat_amount: it.vat_amount,
+        total_amount: it.total_amount,
+        issue_date: it.issue_date,
+        due_date: it.due_date,
+        status: "sent" as const,
+      }));
+      const { data: ins, error: insErr } = await supabase
+        .from("invoices")
+        .upsert(rows, {
+          onConflict: "company_id,direction,document_type,number,issue_date",
+          ignoreDuplicates: true,
+        })
+        .select("id");
+      if (insErr) {
+        console.error("[processInvoicesBatch] insert failed", insErr);
+        failed = true;
+        errorMessage = insErr.message;
+      } else {
+        insertedCount = ins?.length ?? 0;
+      }
+    }
+
+    const newProcessed = (job.processed_chunks ?? 0) + data.chunks_processed;
+    const newInserted = (job.inserted_count ?? 0) + insertedCount;
+    const newFailed = (job.failed_chunks ?? 0) + (failed ? data.chunks_processed : 0);
+    const isDone = newProcessed >= (job.total_chunks ?? 0);
+    await supabase
+      .from("import_jobs")
+      .update({
+        processed_chunks: newProcessed,
+        inserted_count: newInserted,
+        failed_chunks: newFailed,
+        status: isDone ? "completed" : "processing",
+        ...(errorMessage ? { error_message: errorMessage } : {}),
+      })
+      .eq("id", data.job_id);
+
+    return {
+      status: failed ? "failed" : "ok",
+      inserted: insertedCount,
+      parsed: data.invoices.length,
+      message: errorMessage,
+    };
+  });
 
 export const processImportChunk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -244,9 +336,22 @@ REGOLE:
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error("[processImportChunk] AI error", response.status, errText.slice(0, 200));
-        const msg = response.status === 429 ? "Rate limit AI" : response.status === 402 ? "Crediti AI esauriti" : undefined;
-        await markFailed(msg);
-        return { status: "failed", inserted: 0, parsed: 0, message: `HTTP ${response.status}` };
+        const isCredit = response.status === 402 || (response.status === 403 && errText.includes("credit"));
+        const msg = isCredit
+          ? "Crediti AI esauriti"
+          : response.status === 429
+          ? "Rate limit AI"
+          : `AI HTTP ${response.status}`;
+        if (isCredit) {
+          // Marca l'intero job come failed per fermare gli altri chunk
+          await supabase
+            .from("import_jobs")
+            .update({ status: "failed", error_message: msg })
+            .eq("id", data.job_id);
+        } else {
+          await markFailed(msg);
+        }
+        return { status: "failed", inserted: 0, parsed: 0, message: msg };
       }
 
       const json = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };

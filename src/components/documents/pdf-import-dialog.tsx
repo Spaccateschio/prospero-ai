@@ -19,9 +19,11 @@ import { Progress } from "@/components/ui/progress";
 import {
   startImportJob,
   processImportChunk,
+  processInvoicesBatch,
   getImportJob,
   cancelImportJob,
 } from "@/lib/documents.functions";
+import { parseDaneaInvoices, type ParsedInvoice } from "@/lib/danea-parser";
 
 type Mode = "sales" | "purchases" | "other";
 
@@ -32,8 +34,9 @@ type Props = {
   mode: Mode;
 };
 
-const CHUNK_LINES = 60;       // righe di testo per chunk
-const CONCURRENCY = 2;         // chunk paralleli max
+const CHUNK_LINES = 60;       // righe per chunk (fallback AI)
+const CONCURRENCY = 2;         // chunk paralleli max (fallback AI)
+const BATCH_SIZE = 100;        // fatture per batch (parser deterministico)
 const POLL_MS = 1500;
 
 /** Estrae il testo da tutte le pagine usando pdfjs-dist nel browser. */
@@ -81,6 +84,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
   const queryClient = useQueryClient();
   const startJob = useServerFn(startImportJob);
   const processChunk = useServerFn(processImportChunk);
+  const processBatch = useServerFn(processInvoicesBatch);
   const fetchJob = useServerFn(getImportJob);
   const cancelJob = useServerFn(cancelImportJob);
 
@@ -116,6 +120,42 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       cancelledRef.current = false;
       setPreparing(true);
       const text = await extractPdfText(f);
+      const fallbackDir: "attiva" | "passiva" = hintDirection ?? "attiva";
+
+      // 1) Tentativo parser deterministico (Danea ed elenchi tabellari simili)
+      const deterministic: ParsedInvoice[] | null = parseDaneaInvoices(text, fallbackDir);
+
+      if (deterministic && deterministic.length > 0) {
+        const batches: ParsedInvoice[][] = [];
+        for (let i = 0; i < deterministic.length; i += BATCH_SIZE) {
+          batches.push(deterministic.slice(i, i + BATCH_SIZE));
+        }
+        const { job_id } = await startJob({
+          data: {
+            company_id: companyId,
+            filename: f.name,
+            hint_direction: hintDirection ?? null,
+            total_chunks: batches.length,
+          },
+        });
+        setJobId(job_id);
+        setPreparing(false);
+        toast.success(`Riconosciute ${deterministic.length} fatture dal PDF (parser veloce, niente AI)`);
+
+        for (let i = 0; i < batches.length; i++) {
+          if (cancelledRef.current) break;
+          try {
+            await processBatch({
+              data: { job_id, chunks_processed: 1, invoices: batches[i] },
+            });
+          } catch (err) {
+            console.error("[batch]", i, err);
+          }
+        }
+        return { total: batches.length };
+      }
+
+      // 2) Fallback: testo non riconosciuto → estrazione AI a chunk
       const chunks = chunkText(text, CHUNK_LINES);
       if (chunks.length === 0) throw new Error("Nessun testo estraibile dal PDF.");
       const { job_id } = await startJob({
@@ -129,7 +169,6 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       setJobId(job_id);
       setPreparing(false);
 
-      // Worker pool con concorrenza limitata
       let next = 0;
       const runWorker = async () => {
         while (true) {
@@ -140,7 +179,6 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
             await processChunk({ data: { job_id, chunk_index: idx, text: chunks[idx] } });
           } catch (err) {
             console.error("[chunk]", idx, err);
-            // Il server marca già il fallimento; qui continuiamo con gli altri
           }
         }
       };
@@ -194,7 +232,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
             Importa {mode === "sales" ? "fatture emesse" : mode === "purchases" ? "fatture ricevute" : "documenti"} da PDF
           </DialogTitle>
           <DialogDescription>
-            Carica un PDF (fattura singola o elenco anche da centinaia di righe). L'AI estrae i dati a blocchi e li salva man mano.
+            Carica un PDF (fattura singola o elenco anche da centinaia di righe). Gli elenchi tabellari (Danea) vengono riconosciuti automaticamente con un parser veloce; altrimenti viene usata l'AI a blocchi.
           </DialogDescription>
         </DialogHeader>
 
