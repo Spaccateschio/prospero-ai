@@ -151,8 +151,28 @@ export const processImportChunk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ChunkSchema.parse(input))
   .handler(async ({ data, context }): Promise<ChunkResult> => {
-    // Verifica stato job (no processing su job cancellati/falliti)
-    const { data: job } = await context.supabase
+    const supabase = context.supabase;
+
+    const markFailed = async (errorMessage?: string) => {
+      const { data: cur } = await supabase
+        .from("import_jobs")
+        .select("processed_chunks, failed_chunks, total_chunks")
+        .eq("id", data.job_id)
+        .maybeSingle();
+      if (!cur) return;
+      const newProcessed = (cur.processed_chunks ?? 0) + 1;
+      const newFailed = (cur.failed_chunks ?? 0) + 1;
+      const isDone = newProcessed >= (cur.total_chunks ?? 0);
+      const update: Record<string, unknown> = {
+        processed_chunks: newProcessed,
+        failed_chunks: newFailed,
+        status: isDone ? "completed" : "processing",
+      };
+      if (errorMessage) update.error_message = errorMessage;
+      await supabase.from("import_jobs").update(update).eq("id", data.job_id);
+    };
+
+    const { data: job } = await supabase
       .from("import_jobs")
       .select("id, company_id, status, hint_direction")
       .eq("id", data.job_id)
@@ -164,7 +184,7 @@ export const processImportChunk = createServerFn({ method: "POST" })
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
-      await markChunkFailed(context.supabase, data.job_id, "AI non configurata");
+      await markFailed("AI non configurata");
       return { status: "failed", inserted: 0, parsed: 0, message: "AI non configurata" };
     }
 
@@ -210,10 +230,7 @@ REGOLE:
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Estrai le fatture da questo frammento:\n\n${data.text}`,
-            },
+            { role: "user", content: `Estrai le fatture da questo frammento:\n\n${data.text}` },
           ],
           response_format: { type: "json_object" },
         }),
@@ -222,11 +239,8 @@ REGOLE:
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error("[processImportChunk] AI error", response.status, errText.slice(0, 200));
-        if (response.status === 429 || response.status === 402) {
-          await markChunkFailed(context.supabase, data.job_id, response.status === 429 ? "Rate limit AI" : "Crediti AI esauriti");
-        } else {
-          await markChunkFailed(context.supabase, data.job_id);
-        }
+        const msg = response.status === 429 ? "Rate limit AI" : response.status === 402 ? "Crediti AI esauriti" : undefined;
+        await markFailed(msg);
         return { status: "failed", inserted: 0, parsed: 0, message: `HTTP ${response.status}` };
       }
 
@@ -263,7 +277,7 @@ REGOLE:
         .filter((x): x is ExtractedInvoice => x !== null);
     } catch (err) {
       console.error("[processImportChunk] parsing failed", err);
-      await markChunkFailed(context.supabase, data.job_id);
+      await markFailed();
       return { status: "failed", inserted: 0, parsed: 0, message: err instanceof Error ? err.message : "errore" };
     }
 
@@ -284,8 +298,7 @@ REGOLE:
         status: "sent" as const,
       }));
 
-      // Dedup via indice unico parziale (company_id, direction, document_type, number, issue_date)
-      const { data: ins, error: insErr } = await context.supabase
+      const { data: ins, error: insErr } = await supabase
         .from("invoices")
         .upsert(rows, {
           onConflict: "company_id,direction,document_type,number,issue_date",
@@ -295,14 +308,13 @@ REGOLE:
 
       if (insErr) {
         console.error("[processImportChunk] insert failed", insErr);
-        await markChunkFailed(context.supabase, data.job_id, insErr.message);
+        await markFailed(insErr.message);
         return { status: "failed", inserted: 0, parsed: invoices.length, message: insErr.message };
       }
       insertedCount = ins?.length ?? 0;
     }
 
-    // Incrementa contatori (read-modify-write — concorrenza accettabile: max 2-3 chunk paralleli per utente)
-    const { data: cur } = await context.supabase
+    const { data: cur } = await supabase
       .from("import_jobs")
       .select("processed_chunks, inserted_count, total_chunks")
       .eq("id", data.job_id)
@@ -311,7 +323,7 @@ REGOLE:
       const newProcessed = (cur.processed_chunks ?? 0) + 1;
       const newInserted = (cur.inserted_count ?? 0) + insertedCount;
       const isDone = newProcessed >= (cur.total_chunks ?? 0);
-      await context.supabase
+      await supabase
         .from("import_jobs")
         .update({
           processed_chunks: newProcessed,
@@ -323,31 +335,6 @@ REGOLE:
 
     return { status: "ok", inserted: insertedCount, parsed: invoices.length };
   });
-
-async function markChunkFailed(
-  supabase: { from: (t: string) => { select: (s: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { processed_chunks: number | null; failed_chunks: number | null; total_chunks: number | null } | null }> } }; update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> } } },
-  jobId: string,
-  errorMessage?: string,
-) {
-  const { data: cur } = await supabase
-    .from("import_jobs")
-    .select("processed_chunks, failed_chunks, total_chunks")
-    .eq("id", jobId)
-    .maybeSingle();
-  if (!cur) return;
-  const newProcessed = (cur.processed_chunks ?? 0) + 1;
-  const newFailed = (cur.failed_chunks ?? 0) + 1;
-  const isDone = newProcessed >= (cur.total_chunks ?? 0);
-  await supabase
-    .from("import_jobs")
-    .update({
-      processed_chunks: newProcessed,
-      failed_chunks: newFailed,
-      status: isDone ? "completed" : "processing",
-      ...(errorMessage ? { error_message: errorMessage } : {}),
-    })
-    .eq("id", jobId);
-}
 
 // =============================================================
 // TAX PAYMENTS (F24) CRUD — invariato
