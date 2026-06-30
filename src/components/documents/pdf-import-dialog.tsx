@@ -84,6 +84,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
   const queryClient = useQueryClient();
   const startJob = useServerFn(startImportJob);
   const processChunk = useServerFn(processImportChunk);
+  const processBatch = useServerFn(processInvoicesBatch);
   const fetchJob = useServerFn(getImportJob);
   const cancelJob = useServerFn(cancelImportJob);
 
