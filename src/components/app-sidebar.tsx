@@ -14,6 +14,9 @@ import {
   HeartPulse,
   Settings,
   Wallet,
+  FileUp,
+  FileInput,
+  FileStack,
 } from "lucide-react";
 
 import {
@@ -43,6 +46,13 @@ const mainItems = [
   { title: "Consulente AI", url: "/ai-consultant", icon: Bot },
   { title: "Salute Aziendale", url: "/business-health", icon: HeartPulse },
 ] as const;
+
+const documentItems = [
+  { title: "Fatture Emesse", url: "/documents/sales", icon: FileUp },
+  { title: "Fatture Ricevute", url: "/documents/purchases", icon: FileInput },
+  { title: "Altri Documenti", url: "/documents/other", icon: FileStack },
+] as const;
+
 
 const footerItems = [
   { title: "Impostazioni", url: "/settings", icon: Settings },
