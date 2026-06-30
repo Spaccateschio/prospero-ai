@@ -42,6 +42,9 @@ import { Route as AuthenticatedAppBusinessHealthRouteImport } from './routes/_au
 import { Route as AuthenticatedAppBalanceSheetsRouteImport } from './routes/_authenticated/_app/balance-sheets'
 import { Route as AuthenticatedAppAiConsultantRouteImport } from './routes/_authenticated/_app/ai-consultant'
 import { Route as AuthenticatedAppAccountingRouteImport } from './routes/_authenticated/_app/accounting'
+import { Route as AuthenticatedAppDocumentsSalesRouteImport } from './routes/_authenticated/_app/documents.sales'
+import { Route as AuthenticatedAppDocumentsPurchasesRouteImport } from './routes/_authenticated/_app/documents.purchases'
+import { Route as AuthenticatedAppDocumentsOtherRouteImport } from './routes/_authenticated/_app/documents.other'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -219,6 +222,24 @@ const AuthenticatedAppAccountingRoute =
     path: '/accounting',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppDocumentsSalesRoute =
+  AuthenticatedAppDocumentsSalesRouteImport.update({
+    id: '/documents/sales',
+    path: '/documents/sales',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDocumentsPurchasesRoute =
+  AuthenticatedAppDocumentsPurchasesRouteImport.update({
+    id: '/documents/purchases',
+    path: '/documents/purchases',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDocumentsOtherRoute =
+  AuthenticatedAppDocumentsOtherRouteImport.update({
+    id: '/documents/other',
+    path: '/documents/other',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -252,6 +273,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
   '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
+  '/documents/other': typeof AuthenticatedAppDocumentsOtherRoute
+  '/documents/purchases': typeof AuthenticatedAppDocumentsPurchasesRoute
+  '/documents/sales': typeof AuthenticatedAppDocumentsSalesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -285,6 +309,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
   '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
+  '/documents/other': typeof AuthenticatedAppDocumentsOtherRoute
+  '/documents/purchases': typeof AuthenticatedAppDocumentsPurchasesRoute
+  '/documents/sales': typeof AuthenticatedAppDocumentsSalesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -321,6 +348,9 @@ export interface FileRoutesById {
   '/_authenticated/_app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/_app/simulations': typeof AuthenticatedAppSimulationsRoute
   '/_authenticated/_app/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
+  '/_authenticated/_app/documents/other': typeof AuthenticatedAppDocumentsOtherRoute
+  '/_authenticated/_app/documents/purchases': typeof AuthenticatedAppDocumentsPurchasesRoute
+  '/_authenticated/_app/documents/sales': typeof AuthenticatedAppDocumentsSalesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -356,6 +386,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulations'
     | '/tax-calendar'
+    | '/documents/other'
+    | '/documents/purchases'
+    | '/documents/sales'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -389,6 +422,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulations'
     | '/tax-calendar'
+    | '/documents/other'
+    | '/documents/purchases'
+    | '/documents/sales'
   id:
     | '__root__'
     | '/'
@@ -424,6 +460,9 @@ export interface FileRouteTypes {
     | '/_authenticated/_app/settings'
     | '/_authenticated/_app/simulations'
     | '/_authenticated/_app/tax-calendar'
+    | '/_authenticated/_app/documents/other'
+    | '/_authenticated/_app/documents/purchases'
+    | '/_authenticated/_app/documents/sales'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -667,6 +706,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAccountingRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/_app/documents/sales': {
+      id: '/_authenticated/_app/documents/sales'
+      path: '/documents/sales'
+      fullPath: '/documents/sales'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsSalesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/documents/purchases': {
+      id: '/_authenticated/_app/documents/purchases'
+      path: '/documents/purchases'
+      fullPath: '/documents/purchases'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsPurchasesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/_app/documents/other': {
+      id: '/_authenticated/_app/documents/other'
+      path: '/documents/other'
+      fullPath: '/documents/other'
+      preLoaderRoute: typeof AuthenticatedAppDocumentsOtherRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -684,6 +744,9 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSimulationsRoute: typeof AuthenticatedAppSimulationsRoute
   AuthenticatedAppTaxCalendarRoute: typeof AuthenticatedAppTaxCalendarRoute
+  AuthenticatedAppDocumentsOtherRoute: typeof AuthenticatedAppDocumentsOtherRoute
+  AuthenticatedAppDocumentsPurchasesRoute: typeof AuthenticatedAppDocumentsPurchasesRoute
+  AuthenticatedAppDocumentsSalesRoute: typeof AuthenticatedAppDocumentsSalesRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -700,6 +763,10 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSimulationsRoute: AuthenticatedAppSimulationsRoute,
   AuthenticatedAppTaxCalendarRoute: AuthenticatedAppTaxCalendarRoute,
+  AuthenticatedAppDocumentsOtherRoute: AuthenticatedAppDocumentsOtherRoute,
+  AuthenticatedAppDocumentsPurchasesRoute:
+    AuthenticatedAppDocumentsPurchasesRoute,
+  AuthenticatedAppDocumentsSalesRoute: AuthenticatedAppDocumentsSalesRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
