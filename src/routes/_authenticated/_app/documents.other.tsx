@@ -178,7 +178,7 @@ function OtherDocsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {f24s.map((r: { id: string; payment_date: string; protocol: string | null; sections: unknown[]; total_amount: number }) => (
+                    {f24s.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell>{formatDate(r.payment_date)}</TableCell>
                         <TableCell className="font-mono text-xs">{r.protocol ?? "—"}</TableCell>

@@ -100,7 +100,26 @@ export function AppSidebar({ basePath = "" }: { basePath?: string } = {}) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Documenti</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {documentItems.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                    <Link to={withBase(item.url)}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
+
 
       <SidebarFooter>
         <SidebarMenu>
