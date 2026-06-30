@@ -502,7 +502,7 @@ function Step2({ defaults, pending, onBack, onNext }: { defaults: WizardData; pe
           <FormField control={form.control} name="annual_revenue" render={({ field }) => (
             <FormItem>
               <FormLabel>Fatturato annuo (€)</FormLabel>
-              <FormControl><Input type="number" min={0} step="1000" {...field} value={field.value ?? ""} /></FormControl>
+              <FormControl><Input type="number" min={0} step="any" {...field} value={field.value ?? ""} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
