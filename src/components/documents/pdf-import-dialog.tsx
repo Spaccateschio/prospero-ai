@@ -19,9 +19,11 @@ import { Progress } from "@/components/ui/progress";
 import {
   startImportJob,
   processImportChunk,
+  processInvoicesBatch,
   getImportJob,
   cancelImportJob,
 } from "@/lib/documents.functions";
+import { parseDaneaInvoices, type ParsedInvoice } from "@/lib/danea-parser";
 
 type Mode = "sales" | "purchases" | "other";
 
@@ -32,8 +34,9 @@ type Props = {
   mode: Mode;
 };
 
-const CHUNK_LINES = 60;       // righe di testo per chunk
-const CONCURRENCY = 2;         // chunk paralleli max
+const CHUNK_LINES = 60;       // righe per chunk (fallback AI)
+const CONCURRENCY = 2;         // chunk paralleli max (fallback AI)
+const BATCH_SIZE = 100;        // fatture per batch (parser deterministico)
 const POLL_MS = 1500;
 
 /** Estrae il testo da tutte le pagine usando pdfjs-dist nel browser. */
