@@ -182,7 +182,7 @@ function OtherDocsPage() {
                       <TableRow key={r.id}>
                         <TableCell>{formatDate(r.payment_date)}</TableCell>
                         <TableCell className="font-mono text-xs">{r.protocol ?? "—"}</TableCell>
-                        <TableCell className="text-xs">{(r.sections ?? []).length}</TableCell>
+                        <TableCell className="text-xs">{Array.isArray(r.sections) ? r.sections.length : 0}</TableCell>
                         <TableCell className="text-right tabular-nums font-medium">
                           {formatEUR(Number(r.total_amount))}
                         </TableCell>
