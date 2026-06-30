@@ -336,9 +336,22 @@ REGOLE:
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error("[processImportChunk] AI error", response.status, errText.slice(0, 200));
-        const msg = response.status === 429 ? "Rate limit AI" : response.status === 402 ? "Crediti AI esauriti" : undefined;
-        await markFailed(msg);
-        return { status: "failed", inserted: 0, parsed: 0, message: `HTTP ${response.status}` };
+        const isCredit = response.status === 402 || (response.status === 403 && errText.includes("credit"));
+        const msg = isCredit
+          ? "Crediti AI esauriti"
+          : response.status === 429
+          ? "Rate limit AI"
+          : `AI HTTP ${response.status}`;
+        if (isCredit) {
+          // Marca l'intero job come failed per fermare gli altri chunk
+          await supabase
+            .from("import_jobs")
+            .update({ status: "failed", error_message: msg })
+            .eq("id", data.job_id);
+        } else {
+          await markFailed(msg);
+        }
+        return { status: "failed", inserted: 0, parsed: 0, message: msg };
       }
 
       const json = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
