@@ -298,7 +298,7 @@ const SaveSchema = z.object({
   patrimonio_netto: z.number().nullable(),
   debiti_totali: z.number().nullable(),
   liquidita: z.number().nullable(),
-  raw_file_url: z.string().url().nullable().optional(),
+  raw_file_url: z.string().max(1000).nullable().optional(),
 });
 
 export const saveBalanceSheet = createServerFn({ method: "POST" })
