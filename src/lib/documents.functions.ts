@@ -540,3 +540,91 @@ export const deleteTaxPayment = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+// =============================================================
+// Import Excel (documenti) — sincrono, senza job: l'Excel è già
+// strutturato in colonne, quindi non serve chunking come per il PDF.
+// =============================================================
+
+const ExcelImportRowSchema = z.object({
+  document_type: z.enum(["fattura", "parcella", "nota_credito", "ricevuta", "ddt"]),
+  number: z.string().max(60).nullable(),
+  counterpart_name: z.string().min(1).max(200),
+  counterpart_vat: z.string().max(40).nullable(),
+  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  total_amount: z.number().positive(),
+  payment_method: z.string().max(40).nullable(),
+  notes: z.string().max(1000).nullable(),
+});
+
+const ExcelImportSchema = z.object({
+  company_id: z.string().uuid(),
+  direction: z.enum(["attiva", "passiva"]),
+  rows: z.array(ExcelImportRowSchema).min(1).max(3000),
+});
+
+export const importInvoicesBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ExcelImportSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: membership, error: roleErr } = await supabase
+      .from("company_users")
+      .select("role")
+      .eq("company_id", data.company_id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (roleErr) throw new Error(roleErr.message);
+    if (!membership || !["owner", "admin", "accountant"].includes(membership.role)) {
+      throw new Error("Permessi insufficienti per importare documenti");
+    }
+
+    let inserted = 0;
+    const skipped: Array<{ number: string | null; counterpart_name: string; issue_date: string | null; total_amount: number }> = [];
+
+    const CHUNK = 300;
+    for (let i = 0; i < data.rows.length; i += CHUNK) {
+      const chunk = data.rows.slice(i, i + CHUNK);
+      const payload = chunk.map((it) => ({
+        company_id: data.company_id,
+        direction: data.direction,
+        document_type: it.document_type,
+        number: it.number,
+        counterpart_name: it.counterpart_name,
+        counterpart_vat: it.counterpart_vat,
+        amount: it.total_amount,
+        vat_amount: null,
+        total_amount: it.total_amount,
+        issue_date: it.issue_date,
+        due_date: it.due_date,
+        status: "sent" as const,
+        payment_method: it.payment_method,
+        notes: it.notes,
+      }));
+      const { data: ins, error } = await supabase
+        .from("invoices")
+        .upsert(payload, {
+          onConflict: "company_id,direction,document_type,number,issue_date",
+          ignoreDuplicates: true,
+        })
+        .select("id, number, document_type, issue_date");
+      if (error) throw new Error(error.message);
+      inserted += ins?.length ?? 0;
+
+      const insertedKeys = new Set((ins ?? []).map((r) => `${r.number ?? ""}|${r.document_type}|${r.issue_date ?? ""}`));
+      for (const it of chunk) {
+        const key = `${it.number ?? ""}|${it.document_type}|${it.issue_date ?? ""}`;
+        if (!insertedKeys.has(key)) {
+          skipped.push({
+            number: it.number,
+            counterpart_name: it.counterpart_name,
+            issue_date: it.issue_date,
+            total_amount: it.total_amount,
+          });
+        }
+      }
+    }
+
+    return { inserted, total: data.rows.length, skipped_count: skipped.length, skipped: skipped.slice(0, 300) };
+  });

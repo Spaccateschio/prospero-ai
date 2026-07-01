@@ -15,7 +15,7 @@ export type ParsedInvoice = {
   total_amount: number;
 };
 
-const parseNumber = (v: string): number | null => {
+export const parseNumber = (v: string): number | null => {
   const cleaned = v
     .replace(/[€$%\s]/g, "")
     .replace(/\.(?=\d{3}(\D|$))/g, "")
@@ -24,13 +24,13 @@ const parseNumber = (v: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const normalizeDate = (v: string): string | null => {
+export const normalizeDate = (v: string): string | null => {
   const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!m) return null;
   return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
 };
 
-const mapDocType = (raw: string): ParsedInvoice["document_type"] => {
+export const mapDocType = (raw: string): ParsedInvoice["document_type"] => {
   const t = raw.toLowerCase();
   if (t.includes("parcella")) return "parcella";
   if (t.includes("nota") && t.includes("credit")) return "nota_credito";

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Upload, Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown,
-  Pencil, Copy, Trash2, CheckCircle2, MoreHorizontal,
+  Pencil, Copy, Trash2, CheckCircle2, MoreHorizontal, FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import { useActiveCompany } from "@/hooks/use-companies";
 import { formatEUR, formatDate } from "@/lib/format";
 import { listInvoices, upsertInvoice, deleteInvoice, recordInvoicePayment } from "@/lib/invoices.functions";
 import { PdfImportDialog } from "@/components/documents/pdf-import-dialog";
+import { DocsImportExportDialog } from "@/components/documents/import-export-dialog";
 import { InvoiceFormDialog, type InvoiceDraft } from "@/components/invoices/invoice-form-dialog";
 
 type Row = {
@@ -68,6 +69,7 @@ export function DocsList({
   const { activeId, active, isLoading } = useActiveCompany();
   const queryClient = useQueryClient();
   const [importOpen, setImportOpen] = useState(false);
+  const [ieOpen, setIeOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("issue_date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -288,6 +290,9 @@ export function DocsList({
           <Button variant="outline" onClick={() => { setDuplicateFrom(null); setEditRow("new"); }}>
             <Pencil className="mr-2 h-4 w-4" /> Nuovo documento
           </Button>
+          <Button variant="outline" onClick={() => setIeOpen(true)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Import/Export Excel
+          </Button>
           <Button onClick={() => setImportOpen(true)}>
             <Upload className="mr-2 h-4 w-4" /> Importa da PDF
           </Button>
@@ -435,6 +440,16 @@ export function DocsList({
         onOpenChange={setImportOpen}
         companyId={activeId}
         mode={mode}
+      />
+
+      <DocsImportExportDialog
+        open={ieOpen}
+        onOpenChange={setIeOpen}
+        companyId={activeId}
+        direction={direction}
+        mode={mode}
+        rows={sorted}
+        selectedIds={selected}
       />
 
       <InvoiceFormDialog
