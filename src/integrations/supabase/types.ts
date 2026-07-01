@@ -330,6 +330,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           total_revenue_ytd: number | null
+          type: string
           updated_at: string
           vat: string | null
           zone: string | null
@@ -346,6 +347,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           total_revenue_ytd?: number | null
+          type?: string
           updated_at?: string
           vat?: string | null
           zone?: string | null
@@ -362,6 +364,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           total_revenue_ytd?: number | null
+          type?: string
           updated_at?: string
           vat?: string | null
           zone?: string | null

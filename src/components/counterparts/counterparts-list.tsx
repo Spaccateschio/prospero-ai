@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, AlertCircle, Search, Users, Truck } from "lucide-react";
+import { Loader2, AlertCircle, Search, Users, Truck, FileSpreadsheet } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -15,6 +17,7 @@ import {
 import { useActiveCompany } from "@/hooks/use-companies";
 import { formatEUR, formatDate } from "@/lib/format";
 import { listCounterparts, type CounterpartRow } from "@/lib/counterparts.functions";
+import { CounterpartsImportExportDialog } from "@/components/counterparts/import-export-dialog";
 
 type FilterType = "cliente" | "fornitore";
 
@@ -22,6 +25,8 @@ export function CounterpartsList() {
   const { activeId, active, isLoading } = useActiveCompany();
   const [type, setType] = useState<FilterType>("cliente");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [ieOpen, setIeOpen] = useState(false);
   const fetchCounterparts = useServerFn(listCounterparts);
 
   const { data: rows, isLoading: loadingRows } = useQuery({
@@ -54,6 +59,19 @@ export function CounterpartsList() {
     { total: 0, open: 0, overdue: 0 },
   );
 
+  function toggleAll() {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((r) => r.key)));
+  }
+  function toggleOne(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12 text-muted-foreground">
@@ -79,21 +97,26 @@ export function CounterpartsList() {
         <div>
           <h1 className="text-xl font-semibold">Clienti e Fornitori</h1>
           <p className="text-sm text-muted-foreground">
-            {active.company.name} · Anagrafica generata automaticamente dai documenti caricati
+            {active.company.name} · Anagrafica generata dai documenti + record importati manualmente
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cerca per nome o P.IVA…"
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cerca per nome o P.IVA…"
+              className="pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" onClick={() => setIeOpen(true)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Import/Export
+          </Button>
         </div>
       </header>
 
-      <Tabs value={type} onValueChange={(v) => setType(v as FilterType)}>
+      <Tabs value={type} onValueChange={(v) => { setType(v as FilterType); setSelected(new Set()); }}>
         <TabsList>
           <TabsTrigger value="cliente" className="gap-2">
             <Users className="h-4 w-4" /> Clienti
@@ -127,6 +150,15 @@ export function CounterpartsList() {
         </Card>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-4 py-2.5 text-sm">
+          <span className="font-medium">{selected.size} selezionati</span>
+          <Button size="sm" variant="outline" className="ml-auto" onClick={() => setIeOpen(true)}>
+            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Esporta selezionati
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
@@ -145,7 +177,7 @@ export function CounterpartsList() {
             <div className="flex h-32 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
               <p>
                 Nessun {type === "cliente" ? "cliente" : "fornitore"} trovato.
-                {search ? " Prova a modificare la ricerca." : " Importa dei documenti per popolare l'elenco."}
+                {search ? " Prova a modificare la ricerca." : " Importa un file Excel o dei documenti per popolare l'elenco."}
               </p>
             </div>
           ) : (
@@ -153,6 +185,13 @@ export function CounterpartsList() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={selected.size > 0 && selected.size === filtered.length}
+                        onCheckedChange={toggleAll}
+                        aria-label="Seleziona tutto"
+                      />
+                    </TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>P.IVA</TableHead>
                     <TableHead className="text-right">N. Documenti</TableHead>
@@ -164,7 +203,14 @@ export function CounterpartsList() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((r) => (
-                    <TableRow key={r.key}>
+                    <TableRow key={r.key} data-state={selected.has(r.key) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.has(r.key)}
+                          onCheckedChange={() => toggleOne(r.key)}
+                          aria-label={`Seleziona ${r.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{r.name}</TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{r.vat ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">{r.documents_count}</TableCell>
@@ -190,6 +236,14 @@ export function CounterpartsList() {
           )}
         </CardContent>
       </Card>
+
+      <CounterpartsImportExportDialog
+        open={ieOpen}
+        onOpenChange={setIeOpen}
+        companyId={activeId}
+        rows={rows ?? []}
+        selectedIds={selected}
+      />
     </div>
   );
 }
