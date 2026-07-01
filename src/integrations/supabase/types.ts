@@ -330,7 +330,6 @@ export type Database = {
           notes: string | null
           phone: string | null
           total_revenue_ytd: number | null
-          type: string
           updated_at: string
           vat: string | null
           zone: string | null
@@ -347,7 +346,6 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           total_revenue_ytd?: number | null
-          type?: string
           updated_at?: string
           vat?: string | null
           zone?: string | null
@@ -364,7 +362,6 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           total_revenue_ytd?: number | null
-          type?: string
           updated_at?: string
           vat?: string | null
           zone?: string | null
@@ -1203,8 +1200,6 @@ export type Database = {
           id: string
           inserted_count: number
           processed_chunks: number
-          skipped_count: number
-          skipped_details: Json
           status: string
           total_chunks: number
           updated_at: string
@@ -1220,8 +1215,6 @@ export type Database = {
           id?: string
           inserted_count?: number
           processed_chunks?: number
-          skipped_count?: number
-          skipped_details?: Json
           status?: string
           total_chunks?: number
           updated_at?: string
@@ -1237,8 +1230,6 @@ export type Database = {
           id?: string
           inserted_count?: number
           processed_chunks?: number
-          skipped_count?: number
-          skipped_details?: Json
           status?: string
           total_chunks?: number
           updated_at?: string
