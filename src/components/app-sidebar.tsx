@@ -18,6 +18,7 @@ import {
   FileInput,
   FileStack,
   Contact,
+  Landmark,
 } from "lucide-react";
 
 import {
@@ -36,6 +37,7 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Cash Flow", url: "/cash-flow", icon: TrendingUp },
+  { title: "Risorse Finanziarie", url: "/resources", icon: Landmark },
   { title: "Contabilità", url: "/accounting", icon: ReceiptText },
   { title: "Bilanci Storici", url: "/balance-sheets", icon: FileBarChart2 },
   { title: "Finanziamenti", url: "/financing", icon: Banknote },

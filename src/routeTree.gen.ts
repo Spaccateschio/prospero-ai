@@ -32,6 +32,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/_a
 import { Route as AuthenticatedAppTaxCalendarRouteImport } from './routes/_authenticated/_app/tax-calendar'
 import { Route as AuthenticatedAppSimulationsRouteImport } from './routes/_authenticated/_app/simulations'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/_app/settings'
+import { Route as AuthenticatedAppResourcesRouteImport } from './routes/_authenticated/_app/resources'
 import { Route as AuthenticatedAppOpportunitiesRouteImport } from './routes/_authenticated/_app/opportunities'
 import { Route as AuthenticatedAppFinancingRouteImport } from './routes/_authenticated/_app/financing'
 import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated/_app/dashboard'
@@ -163,6 +164,12 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppResourcesRoute =
+  AuthenticatedAppResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppOpportunitiesRoute =
   AuthenticatedAppOpportunitiesRouteImport.update({
     id: '/opportunities',
@@ -278,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/resources': typeof AuthenticatedAppResourcesRoute
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
   '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
@@ -315,6 +323,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/resources': typeof AuthenticatedAppResourcesRoute
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
   '/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
@@ -355,6 +364,7 @@ export interface FileRoutesById {
   '/_authenticated/_app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/_authenticated/_app/financing': typeof AuthenticatedAppFinancingRoute
   '/_authenticated/_app/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/_authenticated/_app/resources': typeof AuthenticatedAppResourcesRoute
   '/_authenticated/_app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/_app/simulations': typeof AuthenticatedAppSimulationsRoute
   '/_authenticated/_app/tax-calendar': typeof AuthenticatedAppTaxCalendarRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financing'
     | '/opportunities'
+    | '/resources'
     | '/settings'
     | '/simulations'
     | '/tax-calendar'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financing'
     | '/opportunities'
+    | '/resources'
     | '/settings'
     | '/simulations'
     | '/tax-calendar'
@@ -470,6 +482,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_app/dashboard'
     | '/_authenticated/_app/financing'
     | '/_authenticated/_app/opportunities'
+    | '/_authenticated/_app/resources'
     | '/_authenticated/_app/settings'
     | '/_authenticated/_app/simulations'
     | '/_authenticated/_app/tax-calendar'
@@ -649,6 +662,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/_app/resources': {
+      id: '/_authenticated/_app/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof AuthenticatedAppResourcesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/_app/opportunities': {
       id: '/_authenticated/_app/opportunities'
       path: '/opportunities'
@@ -762,6 +782,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
   AuthenticatedAppFinancingRoute: typeof AuthenticatedAppFinancingRoute
   AuthenticatedAppOpportunitiesRoute: typeof AuthenticatedAppOpportunitiesRoute
+  AuthenticatedAppResourcesRoute: typeof AuthenticatedAppResourcesRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSimulationsRoute: typeof AuthenticatedAppSimulationsRoute
   AuthenticatedAppTaxCalendarRoute: typeof AuthenticatedAppTaxCalendarRoute
@@ -782,6 +803,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
   AuthenticatedAppFinancingRoute: AuthenticatedAppFinancingRoute,
   AuthenticatedAppOpportunitiesRoute: AuthenticatedAppOpportunitiesRoute,
+  AuthenticatedAppResourcesRoute: AuthenticatedAppResourcesRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSimulationsRoute: AuthenticatedAppSimulationsRoute,
   AuthenticatedAppTaxCalendarRoute: AuthenticatedAppTaxCalendarRoute,
