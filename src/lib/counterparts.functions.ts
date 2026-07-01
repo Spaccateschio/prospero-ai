@@ -228,6 +228,10 @@ export const importCounterparts = createServerFn({ method: "POST" })
           notes: r.notes ?? null,
         };
         const existingId = existingMap.get(key);
+        if (existingId === "pending") {
+          // Duplicato all'interno dello stesso batch: già in coda di insert, salta.
+          continue;
+        }
         if (existingId) {
           const { error: updErr } = await supabase
             .from("clients")
@@ -237,7 +241,7 @@ export const importCounterparts = createServerFn({ method: "POST" })
           upserted += 1;
         } else {
           toInsert.push(payload);
-          // Aggiorna la mappa per evitare doppie insert nello stesso batch
+          // Marca come "in coda" per evitare doppie insert nello stesso batch
           existingMap.set(key, "pending");
         }
       }
