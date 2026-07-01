@@ -107,21 +107,51 @@ export function CounterpartsImportExportDialog({
         const wb = XLSX.read(buf, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+
+        const KNOWN_NAME_HEADERS = ["nome", "name", "nominativo", "ragione sociale"];
+        const hasNameHeader = json.length > 0 && Object.keys(json[0]).some((h) => KNOWN_NAME_HEADERS.includes(h.trim().toLowerCase()));
+
         const out: ImportedRow[] = [];
-        for (const r of json) {
-          const name = cell(r["Nome"] ?? r["Name"] ?? r["Nominativo"] ?? r["Ragione Sociale"]);
-          if (!name) continue;
-          out.push({
-            name,
-            type: normalizeType(r["Tipo"] ?? r["Type"]),
-            vat: cell(r["P.IVA"] ?? r["Partita IVA"] ?? r["VAT"]),
-            fiscal_code: cell(r["Codice Fiscale"] ?? r["CF"]),
-            email: cell(r["Email"] ?? r["E-mail"]),
-            phone: cell(r["Telefono"] ?? r["Phone"]),
-            zone: cell(r["Zona"] ?? r["Area"]),
-            category: cell(r["Categoria"] ?? r["Category"]),
-            notes: cell(r["Note"] ?? r["Notes"]),
-          });
+
+        if (hasNameHeader || json.length === 0) {
+          for (const r of json) {
+            const name = cell(r["Nome"] ?? r["Name"] ?? r["Nominativo"] ?? r["Ragione Sociale"]);
+            if (!name) continue;
+            out.push({
+              name,
+              type: normalizeType(r["Tipo"] ?? r["Type"]),
+              vat: cell(r["P.IVA"] ?? r["Partita IVA"] ?? r["VAT"]),
+              fiscal_code: cell(r["Codice Fiscale"] ?? r["CF"]),
+              email: cell(r["Email"] ?? r["E-mail"]),
+              phone: cell(r["Telefono"] ?? r["Phone"]),
+              zone: cell(r["Zona"] ?? r["Area"]),
+              category: cell(r["Categoria"] ?? r["Category"]),
+              notes: cell(r["Note"] ?? r["Notes"]),
+            });
+          }
+        }
+
+        // Fallback: file senza intestazione riconoscibile (es. una sola colonna di nomi,
+        // magari incollata direttamente). Trattiamo ogni riga con testo nella prima colonna
+        // come un nome, includendo anche quella che sheet_to_json avrebbe scambiato per header.
+        if (out.length === 0) {
+          const raw = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+          for (const row of raw) {
+            const first = Array.isArray(row) ? row[0] : row;
+            const name = cell(first);
+            if (!name) continue;
+            out.push({
+              name,
+              type: "cliente",
+              vat: null,
+              fiscal_code: null,
+              email: null,
+              phone: null,
+              zone: null,
+              category: null,
+              notes: null,
+            });
+          }
         }
         if (out.length === 0) {
           setParseError("Nessuna riga valida trovata. Assicurati che il file abbia una colonna 'Nome'.");
@@ -227,6 +257,7 @@ export function CounterpartsImportExportDialog({
                 />
                 <p className="text-center text-xs text-muted-foreground">
                   Colonne riconosciute: Nome, Tipo (Cliente/Fornitore), P.IVA, Codice Fiscale, Email, Telefono, Zona, Categoria, Note.
+                  Va bene anche un file con una sola colonna di nomi senza intestazione.
                 </p>
               </div>
             )}
