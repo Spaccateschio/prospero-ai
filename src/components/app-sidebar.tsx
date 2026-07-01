@@ -17,6 +17,7 @@ import {
   FileUp,
   FileInput,
   FileStack,
+  Contact,
 } from "lucide-react";
 
 import {
@@ -51,6 +52,7 @@ const documentItems = [
   { title: "Fatture Emesse", url: "/documents/sales", icon: FileUp },
   { title: "Fatture Ricevute", url: "/documents/purchases", icon: FileInput },
   { title: "Altri Documenti", url: "/documents/other", icon: FileStack },
+  { title: "Clienti e Fornitori", url: "/counterparts", icon: Contact },
 ] as const;
 
 

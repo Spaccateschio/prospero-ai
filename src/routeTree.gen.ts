@@ -35,6 +35,7 @@ import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppOpportunitiesRouteImport } from './routes/_authenticated/_app/opportunities'
 import { Route as AuthenticatedAppFinancingRouteImport } from './routes/_authenticated/_app/financing'
 import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated/_app/dashboard'
+import { Route as AuthenticatedAppCounterpartsRouteImport } from './routes/_authenticated/_app/counterparts'
 import { Route as AuthenticatedAppCostMonitorRouteImport } from './routes/_authenticated/_app/cost-monitor'
 import { Route as AuthenticatedAppContractsRouteImport } from './routes/_authenticated/_app/contracts'
 import { Route as AuthenticatedAppCashFlowRouteImport } from './routes/_authenticated/_app/cash-flow'
@@ -180,6 +181,12 @@ const AuthenticatedAppDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppCounterpartsRoute =
+  AuthenticatedAppCounterpartsRouteImport.update({
+    id: '/counterparts',
+    path: '/counterparts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppCostMonitorRoute =
   AuthenticatedAppCostMonitorRouteImport.update({
     id: '/cost-monitor',
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/cash-flow': typeof AuthenticatedAppCashFlowRoute
   '/contracts': typeof AuthenticatedAppContractsRoute
   '/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/counterparts': typeof AuthenticatedAppCounterpartsRoute
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
@@ -303,6 +311,7 @@ export interface FileRoutesByTo {
   '/cash-flow': typeof AuthenticatedAppCashFlowRoute
   '/contracts': typeof AuthenticatedAppContractsRoute
   '/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/counterparts': typeof AuthenticatedAppCounterpartsRoute
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
@@ -342,6 +351,7 @@ export interface FileRoutesById {
   '/_authenticated/_app/cash-flow': typeof AuthenticatedAppCashFlowRoute
   '/_authenticated/_app/contracts': typeof AuthenticatedAppContractsRoute
   '/_authenticated/_app/cost-monitor': typeof AuthenticatedAppCostMonitorRoute
+  '/_authenticated/_app/counterparts': typeof AuthenticatedAppCounterpartsRoute
   '/_authenticated/_app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/_authenticated/_app/financing': typeof AuthenticatedAppFinancingRoute
   '/_authenticated/_app/opportunities': typeof AuthenticatedAppOpportunitiesRoute
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/cash-flow'
     | '/contracts'
     | '/cost-monitor'
+    | '/counterparts'
     | '/dashboard'
     | '/financing'
     | '/opportunities'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/cash-flow'
     | '/contracts'
     | '/cost-monitor'
+    | '/counterparts'
     | '/dashboard'
     | '/financing'
     | '/opportunities'
@@ -454,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_app/cash-flow'
     | '/_authenticated/_app/contracts'
     | '/_authenticated/_app/cost-monitor'
+    | '/_authenticated/_app/counterparts'
     | '/_authenticated/_app/dashboard'
     | '/_authenticated/_app/financing'
     | '/_authenticated/_app/opportunities'
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDashboardRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/_app/counterparts': {
+      id: '/_authenticated/_app/counterparts'
+      path: '/counterparts'
+      fullPath: '/counterparts'
+      preLoaderRoute: typeof AuthenticatedAppCounterpartsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/_app/cost-monitor': {
       id: '/_authenticated/_app/cost-monitor'
       path: '/cost-monitor'
@@ -738,6 +758,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppCashFlowRoute: typeof AuthenticatedAppCashFlowRoute
   AuthenticatedAppContractsRoute: typeof AuthenticatedAppContractsRoute
   AuthenticatedAppCostMonitorRoute: typeof AuthenticatedAppCostMonitorRoute
+  AuthenticatedAppCounterpartsRoute: typeof AuthenticatedAppCounterpartsRoute
   AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
   AuthenticatedAppFinancingRoute: typeof AuthenticatedAppFinancingRoute
   AuthenticatedAppOpportunitiesRoute: typeof AuthenticatedAppOpportunitiesRoute
@@ -757,6 +778,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppCashFlowRoute: AuthenticatedAppCashFlowRoute,
   AuthenticatedAppContractsRoute: AuthenticatedAppContractsRoute,
   AuthenticatedAppCostMonitorRoute: AuthenticatedAppCostMonitorRoute,
+  AuthenticatedAppCounterpartsRoute: AuthenticatedAppCounterpartsRoute,
   AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
   AuthenticatedAppFinancingRoute: AuthenticatedAppFinancingRoute,
   AuthenticatedAppOpportunitiesRoute: AuthenticatedAppOpportunitiesRoute,
