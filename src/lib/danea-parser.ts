@@ -41,7 +41,7 @@ const mapDocType = (raw: string): ParsedInvoice["document_type"] => {
 };
 
 const DATE_RE = /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/;
-const NUMERIC_TOKEN_RE = /^-?[\d.,]+%?$/;
+const NUMERIC_TOKEN_RE = /^[€$]?-?[\d.,]+%?$/;
 
 /**
  * Tenta di parsare un testo di elenco fatture in formato Danea.
