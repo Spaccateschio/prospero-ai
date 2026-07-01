@@ -201,7 +201,18 @@ export const importCounterparts = createServerFn({ method: "POST" })
         if (e.vat) existingMap.set(`${e.type}::${e.vat.trim()}`, e.id);
       }
 
-      const toInsert: Array<Record<string, unknown>> = [];
+      const toInsert: Array<{
+        company_id: string;
+        name: string;
+        type: "cliente" | "fornitore" | "entrambi";
+        vat: string;
+        fiscal_code: string | null;
+        email: string | null;
+        phone: string | null;
+        zone: string | null;
+        category: string | null;
+        notes: string | null;
+      }> = [];
       for (const r of withVat) {
         const key = `${r.type}::${r.vat!.trim()}`;
         const payload = {
