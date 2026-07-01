@@ -204,3 +204,8 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-0.6deg); }
+  50% { transform: rotate(0.6deg); }
+}
