@@ -184,26 +184,60 @@ export const importCounterparts = createServerFn({ method: "POST" })
     const withoutVat = data.rows.filter((r) => !r.vat || !r.vat.trim());
 
     let upserted = 0;
+
+    // Dedup manuale per le righe con P.IVA (l'indice unico è parziale, quindi
+    // non è utilizzabile da ON CONFLICT via PostgREST).
     if (withVat.length > 0) {
-      const payload = withVat.map((r) => ({
-        company_id: data.company_id,
-        name: r.name,
-        type: r.type,
-        vat: r.vat,
-        fiscal_code: r.fiscal_code ?? null,
-        email: r.email ?? null,
-        phone: r.phone ?? null,
-        zone: r.zone ?? null,
-        category: r.category ?? null,
-        notes: r.notes ?? null,
-      }));
-      const { data: ins, error } = await supabase
+      const vats = Array.from(new Set(withVat.map((r) => r.vat!.trim())));
+      const { data: existing, error: exErr } = await supabase
         .from("clients")
-        .upsert(payload, { onConflict: "company_id,type,vat" })
-        .select("id");
-      if (error) throw new Error(error.message);
-      upserted += ins?.length ?? 0;
+        .select("id, type, vat")
+        .eq("company_id", data.company_id)
+        .in("vat", vats);
+      if (exErr) throw new Error(exErr.message);
+
+      const existingMap = new Map<string, string>(); // key: type::vat -> id
+      for (const e of existing ?? []) {
+        if (e.vat) existingMap.set(`${e.type}::${e.vat.trim()}`, e.id);
+      }
+
+      const toInsert: Array<Record<string, unknown>> = [];
+      for (const r of withVat) {
+        const key = `${r.type}::${r.vat!.trim()}`;
+        const payload = {
+          company_id: data.company_id,
+          name: r.name,
+          type: r.type,
+          vat: r.vat!.trim(),
+          fiscal_code: r.fiscal_code ?? null,
+          email: r.email ?? null,
+          phone: r.phone ?? null,
+          zone: r.zone ?? null,
+          category: r.category ?? null,
+          notes: r.notes ?? null,
+        };
+        const existingId = existingMap.get(key);
+        if (existingId) {
+          const { error: updErr } = await supabase
+            .from("clients")
+            .update(payload)
+            .eq("id", existingId);
+          if (updErr) throw new Error(updErr.message);
+          upserted += 1;
+        } else {
+          toInsert.push(payload);
+          // Aggiorna la mappa per evitare doppie insert nello stesso batch
+          existingMap.set(key, "pending");
+        }
+      }
+
+      if (toInsert.length > 0) {
+        const { data: ins, error } = await supabase.from("clients").insert(toInsert).select("id");
+        if (error) throw new Error(error.message);
+        upserted += ins?.length ?? 0;
+      }
     }
+
     if (withoutVat.length > 0) {
       const payload = withoutVat.map((r) => ({
         company_id: data.company_id,
@@ -221,6 +255,7 @@ export const importCounterparts = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       upserted += ins?.length ?? 0;
     }
+
 
     return { upserted, total: data.rows.length };
   });
