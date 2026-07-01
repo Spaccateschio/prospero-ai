@@ -19,6 +19,7 @@ import {
   FileStack,
   Contact,
   Landmark,
+  Package,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ const documentItems = [
   { title: "Fatture Ricevute", url: "/documents/purchases", icon: FileInput },
   { title: "Altri Documenti", url: "/documents/other", icon: FileStack },
   { title: "Clienti e Fornitori", url: "/counterparts", icon: Contact },
+  { title: "Prodotti", url: "/products", icon: Package },
 ] as const;
 
 

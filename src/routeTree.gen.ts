@@ -33,6 +33,7 @@ import { Route as AuthenticatedAppTaxCalendarRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppSimulationsRouteImport } from './routes/_authenticated/_app/simulations'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/_app/settings'
 import { Route as AuthenticatedAppResourcesRouteImport } from './routes/_authenticated/_app/resources'
+import { Route as AuthenticatedAppProductsRouteImport } from './routes/_authenticated/_app/products'
 import { Route as AuthenticatedAppOpportunitiesRouteImport } from './routes/_authenticated/_app/opportunities'
 import { Route as AuthenticatedAppFinancingRouteImport } from './routes/_authenticated/_app/financing'
 import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated/_app/dashboard'
@@ -170,6 +171,12 @@ const AuthenticatedAppResourcesRoute =
     path: '/resources',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppProductsRoute =
+  AuthenticatedAppProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppOpportunitiesRoute =
   AuthenticatedAppOpportunitiesRouteImport.update({
     id: '/opportunities',
@@ -285,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/products': typeof AuthenticatedAppProductsRoute
   '/resources': typeof AuthenticatedAppResourcesRoute
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
@@ -323,6 +331,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedAppDashboardRoute
   '/financing': typeof AuthenticatedAppFinancingRoute
   '/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/products': typeof AuthenticatedAppProductsRoute
   '/resources': typeof AuthenticatedAppResourcesRoute
   '/settings': typeof AuthenticatedAppSettingsRoute
   '/simulations': typeof AuthenticatedAppSimulationsRoute
@@ -364,6 +373,7 @@ export interface FileRoutesById {
   '/_authenticated/_app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/_authenticated/_app/financing': typeof AuthenticatedAppFinancingRoute
   '/_authenticated/_app/opportunities': typeof AuthenticatedAppOpportunitiesRoute
+  '/_authenticated/_app/products': typeof AuthenticatedAppProductsRoute
   '/_authenticated/_app/resources': typeof AuthenticatedAppResourcesRoute
   '/_authenticated/_app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/_app/simulations': typeof AuthenticatedAppSimulationsRoute
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financing'
     | '/opportunities'
+    | '/products'
     | '/resources'
     | '/settings'
     | '/simulations'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financing'
     | '/opportunities'
+    | '/products'
     | '/resources'
     | '/settings'
     | '/simulations'
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_app/dashboard'
     | '/_authenticated/_app/financing'
     | '/_authenticated/_app/opportunities'
+    | '/_authenticated/_app/products'
     | '/_authenticated/_app/resources'
     | '/_authenticated/_app/settings'
     | '/_authenticated/_app/simulations'
@@ -669,6 +682,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppResourcesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/_app/products': {
+      id: '/_authenticated/_app/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedAppProductsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/_app/opportunities': {
       id: '/_authenticated/_app/opportunities'
       path: '/opportunities'
@@ -782,6 +802,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
   AuthenticatedAppFinancingRoute: typeof AuthenticatedAppFinancingRoute
   AuthenticatedAppOpportunitiesRoute: typeof AuthenticatedAppOpportunitiesRoute
+  AuthenticatedAppProductsRoute: typeof AuthenticatedAppProductsRoute
   AuthenticatedAppResourcesRoute: typeof AuthenticatedAppResourcesRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSimulationsRoute: typeof AuthenticatedAppSimulationsRoute
@@ -803,6 +824,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
   AuthenticatedAppFinancingRoute: AuthenticatedAppFinancingRoute,
   AuthenticatedAppOpportunitiesRoute: AuthenticatedAppOpportunitiesRoute,
+  AuthenticatedAppProductsRoute: AuthenticatedAppProductsRoute,
   AuthenticatedAppResourcesRoute: AuthenticatedAppResourcesRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSimulationsRoute: AuthenticatedAppSimulationsRoute,
