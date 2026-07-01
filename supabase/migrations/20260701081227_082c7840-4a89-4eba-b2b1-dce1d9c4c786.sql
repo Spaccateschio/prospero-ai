@@ -1,0 +1,3 @@
+ALTER TABLE public.import_jobs
+  ADD COLUMN IF NOT EXISTS skipped_count INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS skipped_details JSONB NOT NULL DEFAULT '[]'::jsonb;
