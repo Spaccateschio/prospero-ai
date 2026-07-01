@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Upload, Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown,
-  Pencil, Copy, Trash2, CheckCircle2, MoreHorizontal, FileSpreadsheet,
+  Pencil, Copy, Trash2, CheckCircle2, MoreHorizontal, FileSpreadsheet, FileCode2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +28,7 @@ import { formatEUR, formatDate } from "@/lib/format";
 import { listInvoices, upsertInvoice, deleteInvoice, recordInvoicePayment } from "@/lib/invoices.functions";
 import { PdfImportDialog } from "@/components/documents/pdf-import-dialog";
 import { DocsImportExportDialog } from "@/components/documents/import-export-dialog";
+import { XmlImportDialog } from "@/components/documents/xml-import-dialog";
 import { InvoiceFormDialog, type InvoiceDraft } from "@/components/invoices/invoice-form-dialog";
 
 type Row = {
@@ -70,6 +71,7 @@ export function DocsList({
   const queryClient = useQueryClient();
   const [importOpen, setImportOpen] = useState(false);
   const [ieOpen, setIeOpen] = useState(false);
+  const [xmlOpen, setXmlOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("issue_date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -293,6 +295,9 @@ export function DocsList({
           <Button variant="outline" onClick={() => setIeOpen(true)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Import/Export Excel
           </Button>
+          <Button variant="outline" onClick={() => setXmlOpen(true)}>
+            <FileCode2 className="mr-2 h-4 w-4" /> Importa XML
+          </Button>
           <Button onClick={() => setImportOpen(true)}>
             <Upload className="mr-2 h-4 w-4" /> Importa da PDF
           </Button>
@@ -450,6 +455,14 @@ export function DocsList({
         mode={mode}
         rows={sorted}
         selectedIds={selected}
+      />
+
+      <XmlImportDialog
+        open={xmlOpen}
+        onOpenChange={setXmlOpen}
+        companyId={activeId}
+        companyVat={active.company.vat ?? null}
+        fallbackDirection={direction}
       />
 
       <InvoiceFormDialog
