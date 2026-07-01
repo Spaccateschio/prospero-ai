@@ -1147,6 +1147,8 @@ export type Database = {
           id: string
           inserted_count: number
           processed_chunks: number
+          skipped_count: number
+          skipped_details: Json
           status: string
           total_chunks: number
           updated_at: string
@@ -1162,6 +1164,8 @@ export type Database = {
           id?: string
           inserted_count?: number
           processed_chunks?: number
+          skipped_count?: number
+          skipped_details?: Json
           status?: string
           total_chunks?: number
           updated_at?: string
@@ -1177,6 +1181,8 @@ export type Database = {
           id?: string
           inserted_count?: number
           processed_chunks?: number
+          skipped_count?: number
+          skipped_details?: Json
           status?: string
           total_chunks?: number
           updated_at?: string

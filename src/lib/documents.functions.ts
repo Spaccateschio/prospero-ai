@@ -173,7 +173,7 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const { data: job } = await supabase
       .from("import_jobs")
-      .select("id, company_id, status, processed_chunks, inserted_count, failed_chunks, total_chunks")
+      .select("id, company_id, status, processed_chunks, inserted_count, failed_chunks, total_chunks, skipped_count, skipped_details")
       .eq("id", data.job_id)
       .maybeSingle();
     if (!job) return { status: "failed", inserted: 0, parsed: 0, message: "Job inesistente" };
@@ -184,6 +184,7 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
     let insertedCount = 0;
     let failed = false;
     let errorMessage: string | undefined;
+    const skippedNow: Array<{ number: string | null; counterpart_name: string; issue_date: string | null; total_amount: number }> = [];
 
     if (data.invoices.length > 0) {
       const rows = data.invoices.map((it) => ({
@@ -206,19 +207,40 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
           onConflict: "company_id,direction,document_type,number,issue_date",
           ignoreDuplicates: true,
         })
-        .select("id");
+        .select("id, number, document_type, issue_date");
       if (insErr) {
         console.error("[processInvoicesBatch] insert failed", insErr);
         failed = true;
         errorMessage = insErr.message;
       } else {
         insertedCount = ins?.length ?? 0;
+        // Individua quali righe NON sono state inserite (scartate come duplicati)
+        // confrontando la chiave (number, document_type, issue_date) con quelle restituite.
+        const insertedKeys = new Set(
+          (ins ?? []).map((r) => `${r.number ?? ""}|${r.document_type}|${r.issue_date ?? ""}`),
+        );
+        for (const it of data.invoices) {
+          const key = `${it.number ?? ""}|${it.document_type}|${it.issue_date ?? ""}`;
+          if (!insertedKeys.has(key)) {
+            skippedNow.push({
+              number: it.number,
+              counterpart_name: it.counterpart_name,
+              issue_date: it.issue_date,
+              total_amount: it.total_amount,
+            });
+          }
+        }
       }
     }
 
     const newProcessed = (job.processed_chunks ?? 0) + data.chunks_processed;
     const newInserted = (job.inserted_count ?? 0) + insertedCount;
     const newFailed = (job.failed_chunks ?? 0) + (failed ? data.chunks_processed : 0);
+    // Limita l'elenco dettagliato a 300 voci per non far crescere troppo la riga; il conteggio resta sempre esatto.
+    const prevSkippedCount = (job as unknown as { skipped_count?: number }).skipped_count ?? 0;
+    const prevSkippedDetails = ((job as unknown as { skipped_details?: unknown[] }).skipped_details ?? []) as Array<Record<string, unknown>>;
+    const newSkippedCount = prevSkippedCount + skippedNow.length;
+    const newSkippedDetails = [...prevSkippedDetails, ...skippedNow].slice(0, 300);
     const isDone = newProcessed >= (job.total_chunks ?? 0);
     await supabase
       .from("import_jobs")
@@ -226,6 +248,8 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
         processed_chunks: newProcessed,
         inserted_count: newInserted,
         failed_chunks: newFailed,
+        skipped_count: newSkippedCount,
+        skipped_details: newSkippedDetails as unknown as import("@/integrations/supabase/types").Json,
         status: isDone ? "completed" : "processing",
         ...(errorMessage ? { error_message: errorMessage } : {}),
       })

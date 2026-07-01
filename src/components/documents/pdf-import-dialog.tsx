@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Loader2, Upload, XCircle, CheckCircle2 } from "lucide-react";
+import { FileText, Loader2, Upload, XCircle, CheckCircle2, ChevronDown, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   cancelImportJob,
 } from "@/lib/documents.functions";
 import { parseDaneaInvoices, type ParsedInvoice } from "@/lib/danea-parser";
+import { formatEUR, formatDate } from "@/lib/format";
 
 type Mode = "sales" | "purchases" | "other";
 
@@ -91,6 +92,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
   const [file, setFile] = useState<File | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [showSkipped, setShowSkipped] = useState(false);
   const cancelledRef = useRef(false);
 
   const hintDirection: "attiva" | "passiva" | undefined =
@@ -289,7 +291,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
 
               <Progress value={progress} />
 
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="grid grid-cols-4 gap-2 text-center text-xs">
                 <div className="rounded bg-muted/40 p-2">
                   <div className="text-lg font-semibold tabular-nums">{job.inserted_count}</div>
                   <div className="text-muted-foreground">Salvate</div>
@@ -297,6 +299,12 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
                 <div className="rounded bg-muted/40 p-2">
                   <div className="text-lg font-semibold tabular-nums">{job.processed_chunks}</div>
                   <div className="text-muted-foreground">Blocchi processati</div>
+                </div>
+                <div className="rounded bg-muted/40 p-2">
+                  <div className="text-lg font-semibold tabular-nums text-amber-600">
+                    {job.skipped_count ?? 0}
+                  </div>
+                  <div className="text-muted-foreground">Duplicati</div>
                 </div>
                 <div className="rounded bg-muted/40 p-2">
                   <div className="text-lg font-semibold tabular-nums text-destructive">
@@ -309,6 +317,39 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
               {job.error_message && (
                 <div className="rounded bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   {job.error_message}
+                </div>
+              )}
+
+              {(job.skipped_count ?? 0) > 0 && (
+                <div className="rounded border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs font-medium text-amber-800 dark:text-amber-300"
+                    onClick={() => setShowSkipped((v) => !v)}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {job.skipped_count} document{job.skipped_count === 1 ? "o" : "i"} non {job.skipped_count === 1 ? "importato" : "importati"} (numero + data già presenti)
+                    </span>
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showSkipped ? "rotate-180" : ""}`} />
+                  </button>
+                  {showSkipped && (
+                    <div className="max-h-48 overflow-y-auto border-t border-amber-200 px-3 py-2 dark:border-amber-900">
+                      {((job.skipped_details as Array<{ number: string | null; counterpart_name: string; issue_date: string | null; total_amount: number }>) ?? []).map((d, i) => (
+                        <div key={i} className="flex items-center justify-between gap-2 py-1 text-xs text-amber-900 dark:text-amber-200">
+                          <span className="font-mono">{d.number ?? "—"}</span>
+                          <span className="flex-1 truncate px-2">{d.counterpart_name}</span>
+                          <span>{formatDate(d.issue_date)}</span>
+                          <span className="tabular-nums">{formatEUR(d.total_amount)}</span>
+                        </div>
+                      ))}
+                      {job.skipped_count > (job.skipped_details as unknown[])?.length && (
+                        <p className="pt-1 text-[10px] text-amber-700 dark:text-amber-400">
+                          Elenco troncato a 300 voci; il totale scartati è comunque {job.skipped_count}.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
