@@ -1019,6 +1019,59 @@ export type Database = {
           },
         ]
       }
+      financial_resources: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          notes: string | null
+          opening_balance: number
+          opening_balance_date: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_date?: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          notes?: string | null
+          opening_balance?: number
+          opening_balance_date?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_resources_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grants: {
         Row: {
           active: boolean
@@ -1218,6 +1271,7 @@ export type Database = {
           paid_amount: number
           paid_date: string | null
           payment_method: string | null
+          resource_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           total_amount: number
           updated_at: string
@@ -1244,6 +1298,7 @@ export type Database = {
           paid_amount?: number
           paid_date?: string | null
           payment_method?: string | null
+          resource_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           total_amount: number
           updated_at?: string
@@ -1270,6 +1325,7 @@ export type Database = {
           paid_amount?: number
           paid_date?: string | null
           payment_method?: string | null
+          resource_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           total_amount?: number
           updated_at?: string
@@ -1289,6 +1345,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "financial_resources"
             referencedColumns: ["id"]
           },
         ]
@@ -1678,6 +1741,7 @@ export type Database = {
           payment_method: string | null
           reconciled: boolean
           recurrence: string | null
+          resource_id: string | null
           source: string | null
           source_deadline_id: string | null
           source_invoice_id: string | null
@@ -1704,6 +1768,7 @@ export type Database = {
           payment_method?: string | null
           reconciled?: boolean
           recurrence?: string | null
+          resource_id?: string | null
           source?: string | null
           source_deadline_id?: string | null
           source_invoice_id?: string | null
@@ -1730,6 +1795,7 @@ export type Database = {
           payment_method?: string | null
           reconciled?: boolean
           recurrence?: string | null
+          resource_id?: string | null
           source?: string | null
           source_deadline_id?: string | null
           source_invoice_id?: string | null
@@ -1745,6 +1811,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "financial_resources"
             referencedColumns: ["id"]
           },
           {
