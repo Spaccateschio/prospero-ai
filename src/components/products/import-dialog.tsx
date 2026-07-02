@@ -54,19 +54,29 @@ async function extractPdfText(file: File): Promise<string> {
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const tc = await page.getTextContent();
-    let lastY: number | null = null;
-    let line = "";
-    const lines: string[] = [];
+    // pdfjs restituisce gli item in ordine di stream (NON visivo): raggruppo
+    // per Y con tolleranza e ordino per X dentro ogni riga.
+    const buckets: Array<{ y: number; items: Array<{ x: number; str: string }> }> = [];
     for (const item of tc.items as Array<{ str: string; transform: number[] }>) {
+      if (!item.str.trim()) continue;
       const y = item.transform[5];
-      if (lastY !== null && Math.abs(y - lastY) > 2) {
-        if (line.trim()) lines.push(line.trim());
-        line = "";
+      const x = item.transform[4];
+      let b = buckets.find((bk) => Math.abs(bk.y - y) <= 3);
+      if (!b) {
+        b = { y, items: [] };
+        buckets.push(b);
       }
-      line += (line ? " " : "") + item.str;
-      lastY = y;
+      b.items.push({ x, str: item.str });
     }
-    if (line.trim()) lines.push(line.trim());
+    buckets.sort((a, b) => b.y - a.y);
+    const lines = buckets.map((b) =>
+      b.items
+        .sort((a, c) => a.x - c.x)
+        .map((it) => it.str)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
     pages.push(lines.join("\n"));
   }
   return pages.join("\n");
@@ -77,7 +87,7 @@ async function extractPdfText(file: File): Promise<string> {
  * Riga tipo: 01/07/2026 AGLIO SPAGNA kg 0,35 € 6,00 CAFFE OLIMPIA SRL DDT 9267 del 1/7/26
  */
 const PDF_ROW_RE =
-  /^(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+(kg|pz|nr|lt|gr|ct)\s+([\d.,]+)\s+€\s*([\d.,]+)\s+(.+?)(?:\s+((?:DDT|Fatt\.?|NC|Ric\.?)\s*\d+\s+del\s+[\d/]+))?\s*$/i;
+  /^(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+(kg|pz|nr|lt|gr|ct)\s+([\d.,]+)\s+€?\s*([\d.,]+)\s+(.+?)(?:\s+((?:DDT|Fatt\.?|NC|Ric\.?)\s*\d+\s+del\s+[\d/]+))?\s*$/i;
 
 function parsePdfRows(text: string): ParsedRow[] {
   const out: ParsedRow[] = [];
