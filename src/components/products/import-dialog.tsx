@@ -39,6 +39,72 @@ const HEADER_ALIASES: Record<string, string[]> = {
   amount: ["importo riga", "importo", "totale riga", "totale"],
 };
 
+const WRONG_FILE_MSG =
+  "Questo file non è per questa pagina. Qui serve l'export \"Movimenti magazzino\" / \"Scarichi magazzino\" (con colonne Data e Prodotto/Articolo). Se stai importando l'anagrafica prodotti o altri documenti, usa la pagina dedicata.";
+
+/** Estrae il testo da tutte le pagine usando pdfjs-dist nel browser (stesso pattern di pdf-import-dialog). */
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjs = await import("pdfjs-dist");
+  const workerMod = (await import("pdfjs-dist/build/pdf.worker.mjs?url")) as { default: string };
+  pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default;
+
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const tc = await page.getTextContent();
+    let lastY: number | null = null;
+    let line = "";
+    const lines: string[] = [];
+    for (const item of tc.items as Array<{ str: string; transform: number[] }>) {
+      const y = item.transform[5];
+      if (lastY !== null && Math.abs(y - lastY) > 2) {
+        if (line.trim()) lines.push(line.trim());
+        line = "";
+      }
+      line += (line ? " " : "") + item.str;
+      lastY = y;
+    }
+    if (line.trim()) lines.push(line.trim());
+    pages.push(lines.join("\n"));
+  }
+  return pages.join("\n");
+}
+
+/**
+ * Parsa il PDF "Scarichi magazzino" / "Movimenti magazzino" di Danea.
+ * Riga tipo: 01/07/2026 AGLIO SPAGNA kg 0,35 € 6,00 CAFFE OLIMPIA SRL DDT 9267 del 1/7/26
+ */
+const PDF_ROW_RE =
+  /^(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+(kg|pz|nr|lt|gr|ct)\s+([\d.,]+)\s+€\s*([\d.,]+)\s+(.+?)(?:\s+((?:DDT|Fatt\.?|NC|Ric\.?)\s*\d+\s+del\s+[\d/]+))?\s*$/i;
+
+function parsePdfRows(text: string): ParsedRow[] {
+  const out: ParsedRow[] = [];
+  for (const rawLine of text.split("\n")) {
+    const m = rawLine.trim().match(PDF_ROW_RE);
+    if (!m) continue;
+    const dateStr = toDateStr(m[1]);
+    const quantity = toNum(m[4]);
+    const price = toNum(m[5]);
+    const counterpart = m[6].trim();
+    if (!dateStr || quantity === null || quantity <= 0 || price === null || !counterpart) continue;
+    out.push({
+      sale_date: dateStr,
+      counterpart_name: counterpart,
+      product_name: m[2].trim(),
+      product_code: null,
+      category: null,
+      unit: m[3].toLowerCase(),
+      quantity,
+      unit_price: price,
+      total_amount: price * quantity,
+      reference_doc: m[7]?.trim() || null,
+    });
+  }
+  return out;
+}
+
 function findHeaderRow(raw: unknown[][]): { rowIndex: number; colMap: Record<string, number> } | null {
   for (let i = 0; i < Math.min(raw.length, 10); i++) {
     const row = raw[i];
@@ -129,6 +195,24 @@ export function ProductSalesImportDialog({
     setParsedRows(null);
     setParseError(null);
     if (!f) return;
+
+    // Ramo PDF: export "Scarichi magazzino" stampato in PDF da Danea
+    if (f.name.toLowerCase().endsWith(".pdf") || f.type === "application/pdf") {
+      extractPdfText(f)
+        .then((text) => {
+          const rows = parsePdfRows(text);
+          if (rows.length === 0) {
+            setParseError(WRONG_FILE_MSG);
+          } else {
+            setParsedRows(rows);
+          }
+        })
+        .catch((err) =>
+          setParseError(err instanceof Error ? err.message : "Errore durante la lettura del PDF"),
+        );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -139,7 +223,7 @@ export function ProductSalesImportDialog({
 
         const header = findHeaderRow(raw);
         if (!header) {
-          setParseError("Non trovo colonne 'Data' e 'Prodotto/Articolo'. Controlla l'intestazione del file.");
+          setParseError(WRONG_FILE_MSG);
           return;
         }
         const { rowIndex, colMap } = header;
@@ -180,7 +264,7 @@ export function ProductSalesImportDialog({
         }
 
         if (out.length === 0) {
-          setParseError("Nessuna riga valida trovata nel file.");
+          setParseError(WRONG_FILE_MSG);
         } else {
           setParsedRows(out);
         }
@@ -225,7 +309,7 @@ export function ProductSalesImportDialog({
             Importa movimenti prodotto
           </DialogTitle>
           <DialogDescription>
-            Carica l'export "Movimenti magazzino" / "Scarichi magazzino" (XLSX, XLS, ODS) — riconosce sia il formato ricco (con codice, categoria, causale) sia quello semplice (Data, Articolo, Q.ta, Prezzo, Soggetto).
+            Carica l'export "Movimenti magazzino" / "Scarichi magazzino" (XLSX, XLS, ODS o PDF) — riconosce sia il formato ricco (con codice, categoria, causale) sia quello semplice (Data, Articolo, Q.ta, Prezzo, Soggetto).
           </DialogDescription>
         </DialogHeader>
 
@@ -237,7 +321,7 @@ export function ProductSalesImportDialog({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx,.xls,.ods"
+                accept=".xlsx,.xls,.ods,.pdf"
                 className="max-w-xs text-sm"
                 onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
               />
