@@ -1480,53 +1480,6 @@ export type Database = {
           },
         ]
       }
-      products: {
-        Row: {
-          category: string | null
-          code: string | null
-          company_id: string
-          created_at: string
-          default_unit: string | null
-          id: string
-          last_unit_price: number | null
-          name: string
-          notes: string | null
-          updated_at: string
-        }
-        Insert: {
-          category?: string | null
-          code?: string | null
-          company_id: string
-          created_at?: string
-          default_unit?: string | null
-          id?: string
-          last_unit_price?: number | null
-          name: string
-          notes?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category?: string | null
-          code?: string | null
-          company_id?: string
-          created_at?: string
-          default_unit?: string | null
-          id?: string
-          last_unit_price?: number | null
-          name?: string
-          notes?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_sales: {
         Row: {
           category: string | null
@@ -1589,6 +1542,53 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          code: string | null
+          company_id: string
+          created_at: string
+          default_unit: string | null
+          id: string
+          last_unit_price: number | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          code?: string | null
+          company_id: string
+          created_at?: string
+          default_unit?: string | null
+          id?: string
+          last_unit_price?: number | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          code?: string | null
+          company_id?: string
+          created_at?: string
+          default_unit?: string | null
+          id?: string
+          last_unit_price?: number | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
