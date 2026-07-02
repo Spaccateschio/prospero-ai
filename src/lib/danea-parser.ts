@@ -67,8 +67,18 @@ export function parseDaneaInvoices(
 
     // Number = ultimo token prima della data
     const beforeTokens = before.split(/\s+/);
-    const number = beforeTokens[beforeTokens.length - 1];
+    let number = beforeTokens[beforeTokens.length - 1];
     if (!number) continue;
+    // Sezionale staccato dal numero ("727 A", "727 /A") → ricompone "727/A".
+    // La lettera distingue fatture con stesso numero e data: va preservata
+    // perché entra nella chiave di deduplicazione.
+    if (
+      /^\/?[A-Za-z]{1,3}$/.test(number) &&
+      beforeTokens.length >= 2 &&
+      /^\d+$/.test(beforeTokens[beforeTokens.length - 2])
+    ) {
+      number = `${beforeTokens[beforeTokens.length - 2]}/${number.replace(/^\//, "")}`;
+    }
     // Salta intestazioni (es. "Num Data" o "Pagina 1/5 ...")
     if (/^(num|numero|pag|pagina)/i.test(number)) continue;
 

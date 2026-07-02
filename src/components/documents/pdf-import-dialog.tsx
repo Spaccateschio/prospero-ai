@@ -93,6 +93,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
   const [jobId, setJobId] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [showSkipped, setShowSkipped] = useState(false);
+  const [pending, setPending] = useState<ParsedInvoice[] | null>(null);
   const cancelledRef = useRef(false);
 
   const hintDirection: "attiva" | "passiva" | undefined =
@@ -128,33 +129,11 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       const deterministic: ParsedInvoice[] | null = parseDaneaInvoices(text, fallbackDir);
 
       if (deterministic && deterministic.length > 0) {
-        const batches: ParsedInvoice[][] = [];
-        for (let i = 0; i < deterministic.length; i += BATCH_SIZE) {
-          batches.push(deterministic.slice(i, i + BATCH_SIZE));
-        }
-        const { job_id } = await startJob({
-          data: {
-            company_id: companyId,
-            filename: f.name,
-            hint_direction: hintDirection ?? null,
-            total_chunks: batches.length,
-          },
-        });
-        setJobId(job_id);
+        // Non salviamo subito: mostriamo l'anteprima e aspettiamo la conferma.
+        setPending(deterministic);
         setPreparing(false);
-        toast.success(`Riconosciute ${deterministic.length} fatture dal PDF (parser veloce, niente AI)`);
-
-        for (let i = 0; i < batches.length; i++) {
-          if (cancelledRef.current) break;
-          try {
-            await processBatch({
-              data: { job_id, chunks_processed: 1, invoices: batches[i] },
-            });
-          } catch (err) {
-            console.error("[batch]", i, err);
-          }
-        }
-        return { total: batches.length };
+        toast.success(`Riconosciute ${deterministic.length} fatture dal PDF — controlla e conferma`);
+        return { total: 0 };
       }
 
       // 2) Fallback: testo non riconosciuto → estrazione AI a chunk
@@ -193,10 +172,47 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
     },
   });
 
+  const confirmMut = useMutation({
+    mutationFn: async () => {
+      if (!pending || pending.length === 0) return { total: 0 };
+      cancelledRef.current = false;
+      const rows = pending;
+      const batches: ParsedInvoice[][] = [];
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        batches.push(rows.slice(i, i + BATCH_SIZE));
+      }
+      const { job_id } = await startJob({
+        data: {
+          company_id: companyId,
+          filename: file?.name ?? "import.pdf",
+          hint_direction: hintDirection ?? null,
+          total_chunks: batches.length,
+        },
+      });
+      setJobId(job_id);
+      setPending(null);
+
+      for (let i = 0; i < batches.length; i++) {
+        if (cancelledRef.current) break;
+        try {
+          await processBatch({
+            data: { job_id, chunks_processed: 1, invoices: batches[i] },
+          });
+        } catch (err) {
+          console.error("[batch]", i, err);
+        }
+      }
+      return { total: batches.length };
+    },
+    onError: (e) =>
+      toast.error("Import fallito", { description: e instanceof Error ? e.message : "" }),
+  });
+
   function reset() {
     setFile(null);
     setJobId(null);
     setPreparing(false);
+    setPending(null);
     cancelledRef.current = false;
   }
 
@@ -239,7 +255,69 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
         </DialogHeader>
 
         <div className="space-y-4">
-          {!jobId && !preparing && (
+          {!jobId && !preparing && pending && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="rounded bg-muted/40 p-2">
+                  <div className="text-lg font-semibold tabular-nums">{pending.length}</div>
+                  <div className="text-muted-foreground">Fatture riconosciute</div>
+                </div>
+                <div className="rounded bg-muted/40 p-2">
+                  <div className="text-lg font-semibold tabular-nums">
+                    {new Set(pending.map((r) => r.counterpart_name.toLowerCase())).size}
+                  </div>
+                  <div className="text-muted-foreground">Soggetti</div>
+                </div>
+                <div className="rounded bg-muted/40 p-2">
+                  <div className="text-lg font-semibold tabular-nums">
+                    {formatEUR(pending.reduce((s, r) => s + r.total_amount, 0))}
+                  </div>
+                  <div className="text-muted-foreground">Totale</div>
+                </div>
+              </div>
+
+              <div className="max-h-72 overflow-y-auto rounded border">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-background">
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="px-2 py-1.5 font-medium">Num</th>
+                      <th className="px-2 py-1.5 font-medium">Data</th>
+                      <th className="px-2 py-1.5 font-medium">Tipo</th>
+                      <th className="px-2 py-1.5 font-medium">Soggetto</th>
+                      <th className="px-2 py-1.5 text-right font-medium">Totale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pending.map((r, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="px-2 py-1 font-mono">{r.number ?? "—"}</td>
+                        <td className="px-2 py-1 whitespace-nowrap">{formatDate(r.issue_date)}</td>
+                        <td className="px-2 py-1 capitalize">{r.document_type}</td>
+                        <td className="max-w-[180px] truncate px-2 py-1">{r.counterpart_name}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{formatEUR(r.total_amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Nessuna riga è stata ancora salvata. Controlla numeri (incluso il sezionale, es. 727/A), date e importi: con "Conferma e importa" le fatture vengono salvate, saltando quelle già presenti (stesso numero + data).
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={reset}>
+                  Annulla
+                </Button>
+                <Button onClick={() => confirmMut.mutate()} disabled={confirmMut.isPending}>
+                  {confirmMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Conferma e importa {pending.length} fatture
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!jobId && !preparing && !pending && (
             <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8">
               <FileText className="h-10 w-10 text-muted-foreground" />
               <div className="text-center text-sm text-muted-foreground">
