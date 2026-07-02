@@ -83,7 +83,7 @@ export const importProductSales = createServerFn({ method: "POST" })
         .in("code", codes);
       if (exErr) throw new Error(exErr.message);
       const existingByCode = new Map((existing ?? []).map((e) => [e.code as string, e.id]));
-      const toInsert: Array<Record<string, unknown>> = [];
+      const toInsert: Array<any> = [];
       for (const p of withCode) {
         const payload = {
           company_id: data.company_id,
@@ -117,7 +117,7 @@ export const importProductSales = createServerFn({ method: "POST" })
       const existingByName = new Map(
         (existing ?? []).filter((e) => !e.code).map((e) => [e.name as string, e.id]),
       );
-      const toInsert: Array<Record<string, unknown>> = [];
+      const toInsert: Array<any> = [];
       for (const p of withoutCode) {
         const payload = {
           company_id: data.company_id,
@@ -162,7 +162,7 @@ export const importProductSales = createServerFn({ method: "POST" })
         }
       }
 
-      const payload: Array<Record<string, unknown>> = [];
+      const payload: Array<any> = [];
       for (const r of chunk) {
         if (r.reference_doc) {
           const key = `${r.reference_doc}::${r.product_name}::${r.sale_date}::${r.quantity}::${r.unit_price}`;
