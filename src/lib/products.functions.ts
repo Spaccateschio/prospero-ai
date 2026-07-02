@@ -73,63 +73,124 @@ export const importProductSales = createServerFn({ method: "POST" })
     const withCode = Array.from(productMap.values()).filter((p) => p.code);
     const withoutCode = Array.from(productMap.values()).filter((p) => !p.code);
 
+    // Manuale: gli indici unici su products sono parziali, non usabili con ON CONFLICT.
     if (withCode.length > 0) {
-      const { error } = await supabase.from("products").upsert(
-        withCode.map((p) => ({
+      const codes = withCode.map((p) => p.code as string);
+      const { data: existing, error: exErr } = await supabase
+        .from("products")
+        .select("id, code")
+        .eq("company_id", data.company_id)
+        .in("code", codes);
+      if (exErr) throw new Error(exErr.message);
+      const existingByCode = new Map((existing ?? []).map((e) => [e.code as string, e.id]));
+      const toInsert: Array<Record<string, unknown>> = [];
+      for (const p of withCode) {
+        const payload = {
           company_id: data.company_id,
           code: p.code,
           name: p.name,
           category: p.category,
           default_unit: p.unit,
           last_unit_price: p.price,
-        })),
-        { onConflict: "company_id,code" },
-      );
-      if (error) throw new Error(error.message);
+        };
+        const id = existingByCode.get(p.code as string);
+        if (id) {
+          const { error } = await supabase.from("products").update(payload).eq("id", id);
+          if (error) throw new Error(error.message);
+        } else {
+          toInsert.push(payload);
+        }
+      }
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from("products").insert(toInsert);
+        if (error) throw new Error(error.message);
+      }
     }
     if (withoutCode.length > 0) {
-      const { error } = await supabase.from("products").upsert(
-        withoutCode.map((p) => ({
+      const names = withoutCode.map((p) => p.name);
+      const { data: existing, error: exErr } = await supabase
+        .from("products")
+        .select("id, name, code")
+        .eq("company_id", data.company_id)
+        .in("name", names);
+      if (exErr) throw new Error(exErr.message);
+      const existingByName = new Map(
+        (existing ?? []).filter((e) => !e.code).map((e) => [e.name as string, e.id]),
+      );
+      const toInsert: Array<Record<string, unknown>> = [];
+      for (const p of withoutCode) {
+        const payload = {
           company_id: data.company_id,
           code: null,
           name: p.name,
           category: p.category,
           default_unit: p.unit,
           last_unit_price: p.price,
-        })),
-        { onConflict: "company_id,name" },
-      );
-      if (error) throw new Error(error.message);
+        };
+        const id = existingByName.get(p.name);
+        if (id) {
+          const { error } = await supabase.from("products").update(payload).eq("id", id);
+          if (error) throw new Error(error.message);
+        } else {
+          toInsert.push(payload);
+        }
+      }
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from("products").insert(toInsert);
+        if (error) throw new Error(error.message);
+      }
     }
 
-    // 2) Insert righe vendita (upsert con ignoreDuplicates per evitare doppio import)
+    // 2) Insert righe vendita — dedup manuale per (reference_doc, product_name, sale_date, quantity, unit_price)
     let inserted = 0;
     const CHUNK = 500;
     for (let i = 0; i < data.rows.length; i += CHUNK) {
       const chunk = data.rows.slice(i, i + CHUNK);
-      const payload = chunk.map((r) => ({
-        company_id: data.company_id,
-        product_name: r.product_name,
-        product_code: r.product_code ?? null,
-        category: r.category ?? null,
-        unit: r.unit ?? null,
-        sale_date: r.sale_date,
-        counterpart_name: r.counterpart_name,
-        quantity: r.quantity,
-        unit_price: r.unit_price,
-        total_amount: r.total_amount,
-        reference_doc: r.reference_doc ?? null,
-      }));
-      const { data: ins, error } = await supabase
-        .from("product_sales")
-        .upsert(payload, {
-          onConflict: "company_id,reference_doc,product_name,sale_date,quantity,unit_price",
-          ignoreDuplicates: true,
-        })
-        .select("id");
-      if (error) throw new Error(error.message);
-      inserted += ins?.length ?? 0;
+
+      // Recupera righe già presenti nel range date del chunk con reference_doc valorizzato
+      const refDocs = Array.from(new Set(chunk.map((r) => r.reference_doc).filter((v): v is string => !!v)));
+      const existingKeys = new Set<string>();
+      if (refDocs.length > 0) {
+        const { data: existing, error: exErr } = await supabase
+          .from("product_sales")
+          .select("reference_doc, product_name, sale_date, quantity, unit_price")
+          .eq("company_id", data.company_id)
+          .in("reference_doc", refDocs);
+        if (exErr) throw new Error(exErr.message);
+        for (const e of existing ?? []) {
+          existingKeys.add(`${e.reference_doc}::${e.product_name}::${e.sale_date}::${e.quantity}::${e.unit_price}`);
+        }
+      }
+
+      const payload: Array<Record<string, unknown>> = [];
+      for (const r of chunk) {
+        if (r.reference_doc) {
+          const key = `${r.reference_doc}::${r.product_name}::${r.sale_date}::${r.quantity}::${r.unit_price}`;
+          if (existingKeys.has(key)) continue;
+          existingKeys.add(key);
+        }
+        payload.push({
+          company_id: data.company_id,
+          product_name: r.product_name,
+          product_code: r.product_code ?? null,
+          category: r.category ?? null,
+          unit: r.unit ?? null,
+          sale_date: r.sale_date,
+          counterpart_name: r.counterpart_name,
+          quantity: r.quantity,
+          unit_price: r.unit_price,
+          total_amount: r.total_amount,
+          reference_doc: r.reference_doc ?? null,
+        });
+      }
+
+      if (payload.length > 0) {
+        const { data: ins, error } = await supabase.from("product_sales").insert(payload).select("id");
+        if (error) throw new Error(error.message);
+        inserted += ins?.length ?? 0;
+      }
     }
+
 
     return { inserted, total: data.rows.length };
   });
