@@ -13,6 +13,8 @@ export type ParsedInvoice = {
   amount: number | null;
   vat_amount: number | null;
   total_amount: number;
+  /** Quota già pagata (da colonna "Ancora da saldare" dell'Elenco registrazioni). */
+  paid_amount?: number | null;
 };
 
 export const parseNumber = (v: string): number | null => {
@@ -140,4 +142,61 @@ export function parseDaneaInvoices(
   if (out.length < Math.max(3, candidates.length * 0.4)) return null;
 
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Parser deterministico per export "Elenco registrazioni" di Danea (acquisti).
+// Record su DUE righe visive:
+//   Fattura fornitore <numero> del <data doc> <data reg> <protocollo> € <totale> € <ancora da saldare>
+//   <Nome fornitore>
+// Le note di credito hanno totale negativo e "Nota di credito fornitore ...".
+// ---------------------------------------------------------------------------
+
+const REGISTRAZIONE_RE =
+  /^(Fattura|Nota di credito)\s+fornitore\s+(.+?)\s+del\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d+)\s+€\s*(-?[\d.,]+)\s+€\s*(-?[\d.,]+)\s*$/i;
+
+export function parseDaneaRegistrazioni(text: string): ParsedInvoice[] | null {
+  const lines = text.split(/\n/).map((l) => l.trim());
+  const out: ParsedInvoice[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(REGISTRAZIONE_RE);
+    if (!m) continue;
+
+    const rawTotal = parseNumber(m[6]);
+    const rawResiduo = parseNumber(m[7]) ?? 0;
+    if (rawTotal === null || rawTotal === 0) continue;
+
+    // Nome fornitore sulla riga successiva (che non sia un altro record o un'intestazione)
+    const next = lines[i + 1] ?? "";
+    const isName =
+      next.length >= 2 &&
+      !REGISTRAZIONE_RE.test(next) &&
+      !/^(Descrizione|Protocollo|Pag\.|Pagina|Elenco registrazioni)/i.test(next) &&
+      /[a-zA-Z]/.test(next);
+    if (!isName) continue;
+
+    const total = Math.abs(rawTotal);
+    const residuo = Math.min(Math.abs(rawResiduo), total);
+    const issueDate = normalizeDate(m[3]);
+    if (!issueDate) continue;
+
+    out.push({
+      document_type: /^nota/i.test(m[1]) ? "nota_credito" : "fattura",
+      direction: "passiva",
+      number: m[2].trim(),
+      counterpart_name: next,
+      counterpart_vat: null,
+      issue_date: issueDate,
+      due_date: null,
+      amount: null,
+      vat_amount: null,
+      total_amount: total,
+      paid_amount: total - residuo,
+    });
+    i++; // salta la riga del nome
+  }
+
+  // Sotto una soglia minima non è questo formato
+  return out.length >= 3 ? out : null;
 }

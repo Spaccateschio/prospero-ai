@@ -151,6 +151,7 @@ const InvoiceInputSchema = z.object({
   amount: z.number().nullable(),
   vat_amount: z.number().nullable(),
   total_amount: z.number().positive(),
+  paid_amount: z.number().min(0).nullable().optional(),
 });
 
 const BatchSchema = z.object({
@@ -197,9 +198,13 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
         amount: it.amount ?? it.total_amount,
         vat_amount: it.vat_amount,
         total_amount: it.total_amount,
+        paid_amount: it.paid_amount ?? null,
         issue_date: it.issue_date,
         due_date: it.due_date,
-        status: "sent" as const,
+        status:
+          it.paid_amount != null && it.paid_amount >= it.total_amount
+            ? ("paid" as const)
+            : ("sent" as const),
       }));
       const { data: ins, error: insErr } = await supabase
         .from("invoices")

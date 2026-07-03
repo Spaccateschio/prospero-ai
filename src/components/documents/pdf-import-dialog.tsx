@@ -23,7 +23,7 @@ import {
   getImportJob,
   cancelImportJob,
 } from "@/lib/documents.functions";
-import { parseDaneaInvoices, type ParsedInvoice } from "@/lib/danea-parser";
+import { parseDaneaInvoices, parseDaneaRegistrazioni, type ParsedInvoice } from "@/lib/danea-parser";
 import { formatEUR, formatDate } from "@/lib/format";
 
 type Mode = "sales" | "purchases" | "other";
@@ -125,8 +125,12 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       const text = await extractPdfText(f);
       const fallbackDir: "attiva" | "passiva" = hintDirection ?? "attiva";
 
-      // 1) Tentativo parser deterministico (Danea ed elenchi tabellari simili)
-      const deterministic: ParsedInvoice[] | null = parseDaneaInvoices(text, fallbackDir);
+      // 1) Tentativo parser deterministici (Elenco registrazioni, poi elenchi fatture Danea)
+      const registrazioni = parseDaneaRegistrazioni(text);
+      const deterministic: ParsedInvoice[] | null =
+        registrazioni && registrazioni.length > 0
+          ? registrazioni
+          : parseDaneaInvoices(text, fallbackDir);
 
       if (deterministic && deterministic.length > 0) {
         // Non salviamo subito: mostriamo l'anteprima e aspettiamo la conferma.
