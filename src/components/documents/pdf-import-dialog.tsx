@@ -154,6 +154,19 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       setJobId(job_id);
       setPreparing(false);
 
+      let abortSent = false;
+      const abortImport = async (err: unknown) => {
+        if (abortSent) return;
+        abortSent = true;
+        cancelledRef.current = true;
+        console.error("[chunk] import interrotto", err);
+        try {
+          await cancelJob({ data: { job_id } });
+        } catch (cancelErr) {
+          console.error("[chunk] annullamento fallito", cancelErr);
+        }
+      };
+
       let next = 0;
       const runWorker = async () => {
         while (true) {
@@ -163,7 +176,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
           try {
             await processChunk({ data: { job_id, chunk_index: idx, text: chunks[idx] } });
           } catch (err) {
-            console.error("[chunk]", idx, err);
+            await abortImport(err);
           }
         }
       };
@@ -196,6 +209,19 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
       setJobId(job_id);
       setPending(null);
 
+      let abortSent = false;
+      const abortImport = async (err: unknown) => {
+        if (abortSent) return;
+        abortSent = true;
+        cancelledRef.current = true;
+        console.error("[batch] import interrotto", err);
+        try {
+          await cancelJob({ data: { job_id } });
+        } catch (cancelErr) {
+          console.error("[batch] annullamento fallito", cancelErr);
+        }
+      };
+
       for (let i = 0; i < batches.length; i++) {
         if (cancelledRef.current) break;
         try {
@@ -203,7 +229,7 @@ export function PdfImportDialog({ open, onOpenChange, companyId, mode }: Props) 
             data: { job_id, chunks_processed: 1, invoices: batches[i] },
           });
         } catch (err) {
-          console.error("[batch]", i, err);
+          await abortImport(err);
         }
       }
       return { total: batches.length };
