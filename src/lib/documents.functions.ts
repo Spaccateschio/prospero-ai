@@ -198,7 +198,7 @@ export const processInvoicesBatch = createServerFn({ method: "POST" })
         amount: it.amount ?? it.total_amount,
         vat_amount: it.vat_amount,
         total_amount: it.total_amount,
-        paid_amount: it.paid_amount ?? null,
+        paid_amount: it.paid_amount ?? undefined,
         issue_date: it.issue_date,
         due_date: it.due_date,
         status:
