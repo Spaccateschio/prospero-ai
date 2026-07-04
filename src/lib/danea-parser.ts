@@ -152,40 +152,48 @@ export function parseDaneaInvoices(
 // Le note di credito hanno totale negativo e "Nota di credito fornitore ...".
 // ---------------------------------------------------------------------------
 
-const REGISTRAZIONE_RE =
-  /^(Fattura|Nota di credito)\s+fornitore\s+(.+?)\s+del\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d+)\s+€\s*(-?[\d.,]+)\s+€\s*(-?[\d.,]+)\s*$/i;
+const REGISTRAZIONE_GLOBAL_RE =
+  /(Fattura|Nota di credito)\s+fornitore\s+([^\n]+?)\s+del\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d+)\s+€\s*(-?[\d.,]+)\s+€\s*(-?[\d.,]+)/gi;
+
+const NAME_NOISE_RE =
+  /^(Descrizione|Protocollo|Commento|Totale documento|Ancora da saldare|Pag\.|Pagina|Continua|Elenco registrazioni)/i;
+
+function cleanSupplierName(raw: string): string | null {
+  const lines = raw
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length >= 2 && /[a-zA-Z]/.test(l) && !NAME_NOISE_RE.test(l));
+  return lines[0] ?? null;
+}
 
 export function parseDaneaRegistrazioni(text: string): ParsedInvoice[] | null {
-  const lines = text.split(/\n/).map((l) => l.trim());
   const out: ParsedInvoice[] = [];
+  const matches = Array.from(text.matchAll(REGISTRAZIONE_GLOBAL_RE));
+  if (matches.length === 0) return null;
 
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(REGISTRAZIONE_RE);
-    if (!m) continue;
-
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
     const rawTotal = parseNumber(m[6]);
     const rawResiduo = parseNumber(m[7]) ?? 0;
     if (rawTotal === null || rawTotal === 0) continue;
+    const issueDate = normalizeDate(m[3]);
+    if (!issueDate) continue;
 
-    // Nome fornitore sulla riga successiva (che non sia un altro record o un'intestazione)
-    const next = lines[i + 1] ?? "";
-    const isName =
-      next.length >= 2 &&
-      !REGISTRAZIONE_RE.test(next) &&
-      !/^(Descrizione|Protocollo|Pag\.|Pagina|Elenco registrazioni)/i.test(next) &&
-      /[a-zA-Z]/.test(next);
-    if (!isName) continue;
+    // Nome fornitore = testo tra la fine di questo match e l'inizio del prossimo
+    const start = (m.index ?? 0) + m[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index ?? text.length : text.length;
+    const between = text.slice(start, end);
+    const name = cleanSupplierName(between);
+    if (!name) continue;
 
     const total = Math.abs(rawTotal);
     const residuo = Math.min(Math.abs(rawResiduo), total);
-    const issueDate = normalizeDate(m[3]);
-    if (!issueDate) continue;
 
     out.push({
       document_type: /^nota/i.test(m[1]) ? "nota_credito" : "fattura",
       direction: "passiva",
       number: m[2].trim(),
-      counterpart_name: next,
+      counterpart_name: name,
       counterpart_vat: null,
       issue_date: issueDate,
       due_date: null,
@@ -194,9 +202,7 @@ export function parseDaneaRegistrazioni(text: string): ParsedInvoice[] | null {
       total_amount: total,
       paid_amount: total - residuo,
     });
-    i++; // salta la riga del nome
   }
 
-  // Sotto una soglia minima non è questo formato
   return out.length >= 3 ? out : null;
 }
