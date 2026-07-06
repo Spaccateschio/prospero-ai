@@ -68,9 +68,9 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
         .lt("issue_date", monthStartStr),
       supabase
         .from("invoices")
-        .select("id, total_amount, due_date, status")
+        .select("id, total_amount, paid_amount, document_type, due_date, status")
         .eq("company_id", data.company_id)
-        .in("status", ["sent", "overdue", "draft"]),
+        .in("status", ["sent", "overdue"]),
       supabase
         .from("transactions")
         .select("id, amount, date, description")
@@ -103,10 +103,14 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
     const thisCashflow = thisInc - thisExp;
     const prevCashflow = prevInc - prevExp;
 
-    const openInvoicesTotal = (openInvoices.data ?? []).reduce(
-      (s, r) => s + Number(r.total_amount),
-      0,
-    );
+    // Residuo reale: totale - già pagato; note di credito riducono l'aperto.
+    const openInvoicesTotal = (openInvoices.data ?? []).reduce((s, r) => {
+      const residual = Math.max(
+        Number(r.total_amount) - Number((r as { paid_amount?: number | string | null }).paid_amount ?? 0),
+        0,
+      );
+      return s + ((r as { document_type?: string | null }).document_type === "nota_credito" ? -residual : residual);
+    }, 0);
     const openInvoicesCount = (openInvoices.data ?? []).length;
 
     return {
