@@ -45,21 +45,27 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
     const prevMonthStart = startOfMonth(subMonths(today, 1));
     const horizon30 = addDays(today, 30);
 
-    const [thisMonth, prevMonth, openInvoices, upcomingExpenses] = await Promise.all([
+    const monthStartStr = format(monthStart, "yyyy-MM-dd");
+    const prevMonthStartStr = format(prevMonthStart, "yyyy-MM-dd");
+    const todayStr = format(today, "yyyy-MM-dd");
+
+    // Fatture del mese corrente e precedente (per issue_date), escluse draft/cancelled.
+    // Le note di credito si sottraggono.
+    const [thisMonthInv, prevMonthInv, openInvoices, upcomingExpenses] = await Promise.all([
       supabase
-        .from("transactions")
-        .select("amount, type, is_forecast")
+        .from("invoices")
+        .select("direction, total_amount, document_type, status")
         .eq("company_id", data.company_id)
-        .eq("is_forecast", false)
-        .gte("date", format(monthStart, "yyyy-MM-dd"))
-        .lte("date", format(today, "yyyy-MM-dd")),
+        .not("status", "in", "(draft,cancelled)")
+        .gte("issue_date", monthStartStr)
+        .lte("issue_date", todayStr),
       supabase
-        .from("transactions")
-        .select("amount, type, is_forecast")
+        .from("invoices")
+        .select("direction, total_amount, document_type, status")
         .eq("company_id", data.company_id)
-        .eq("is_forecast", false)
-        .gte("date", format(prevMonthStart, "yyyy-MM-dd"))
-        .lt("date", format(monthStart, "yyyy-MM-dd")),
+        .not("status", "in", "(draft,cancelled)")
+        .gte("issue_date", prevMonthStartStr)
+        .lt("issue_date", monthStartStr),
       supabase
         .from("invoices")
         .select("id, total_amount, due_date, status")
@@ -70,24 +76,30 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
         .select("id, amount, date, description")
         .eq("company_id", data.company_id)
         .eq("type", "uscita")
-        .gte("date", format(today, "yyyy-MM-dd"))
+        .gte("date", todayStr)
         .lte("date", format(horizon30, "yyyy-MM-dd"))
         .order("date", { ascending: true })
         .limit(5),
     ]);
 
-    if (thisMonth.error) throw new Error(thisMonth.error.message);
-    if (prevMonth.error) throw new Error(prevMonth.error.message);
+    if (thisMonthInv.error) throw new Error(thisMonthInv.error.message);
+    if (prevMonthInv.error) throw new Error(prevMonthInv.error.message);
     if (openInvoices.error) throw new Error(openInvoices.error.message);
     if (upcomingExpenses.error) throw new Error(upcomingExpenses.error.message);
 
-    const sum = (rows: { amount: number; type: string }[], type: string) =>
-      rows.filter((r) => r.type === type).reduce((s, r) => s + Number(r.amount), 0);
+    const signed = (row: { total_amount: number | string; document_type: string | null }) => {
+      const amt = Number(row.total_amount);
+      return row.document_type === "nota_credito" ? -amt : amt;
+    };
+    const sumByDir = (
+      rows: { direction: string; total_amount: number | string; document_type: string | null }[],
+      dir: "attiva" | "passiva",
+    ) => rows.filter((r) => r.direction === dir).reduce((s, r) => s + signed(r), 0);
 
-    const thisInc = sum(thisMonth.data ?? [], "entrata");
-    const thisExp = sum(thisMonth.data ?? [], "uscita");
-    const prevInc = sum(prevMonth.data ?? [], "entrata");
-    const prevExp = sum(prevMonth.data ?? [], "uscita");
+    const thisInc = sumByDir(thisMonthInv.data ?? [], "attiva");
+    const thisExp = sumByDir(thisMonthInv.data ?? [], "passiva");
+    const prevInc = sumByDir(prevMonthInv.data ?? [], "attiva");
+    const prevExp = sumByDir(prevMonthInv.data ?? [], "passiva");
     const thisCashflow = thisInc - thisExp;
     const prevCashflow = prevInc - prevExp;
 
@@ -99,7 +111,9 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
 
     return {
       revenue_month: thisInc,
-      revenue_month_delta_pct: prevInc > 0 ? ((thisInc - prevInc) / prevInc) * 100 : null,
+      revenue_month_delta_pct: prevInc !== 0 ? ((thisInc - prevInc) / Math.abs(prevInc)) * 100 : null,
+      expenses_month: thisExp,
+      expenses_month_delta_pct: prevExp !== 0 ? ((thisExp - prevExp) / Math.abs(prevExp)) * 100 : null,
       cashflow_month: thisCashflow,
       cashflow_month_delta_pct:
         prevCashflow !== 0
@@ -115,6 +129,7 @@ export const getDashboardKPIs = createServerFn({ method: "POST" })
       })),
     };
   });
+
 
 export const getTopExpenseCategories = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
