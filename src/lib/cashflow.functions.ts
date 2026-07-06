@@ -317,14 +317,18 @@ export const getCashflowSummary = createServerFn({ method: "POST" })
     const todayStr = format(today, "yyyy-MM-dd");
     const horizonEndStr = format(horizonEnd, "yyyy-MM-dd");
 
-    const { data: rows, error } = await supabase
-      .from("transactions")
-      .select("date, amount, type, recurrence, is_forecast")
+    // income_actual / expense_actual: da FATTURE emesse/ricevute per issue_date.
+    // Escluse draft e cancelled; note di credito sottratte.
+    const { data: invRows, error: invErr } = await supabase
+      .from("invoices")
+      .select("issue_date, total_amount, direction, document_type, status")
       .eq("company_id", data.company_id)
-      .gte("date", format(start, "yyyy-MM-dd"))
-      .lte("date", horizonEndStr);
-    if (error) throw new Error(error.message);
+      .not("status", "in", "(draft,cancelled)")
+      .gte("issue_date", format(start, "yyyy-MM-dd"))
+      .lte("issue_date", horizonEndStr);
+    if (invErr) throw new Error(invErr.message);
 
+    // Ricorrenze proiettate: continuano a venire dalle transactions ricorrenti (forecast futuri).
     const { data: recurringAll, error: recErr } = await supabase
       .from("transactions")
       .select("date, amount, type, recurrence")
@@ -353,18 +357,17 @@ export const getCashflowSummary = createServerFn({ method: "POST" })
 
     const todayKey = format(today, "yyyy-MM");
 
-    for (const r of rows ?? []) {
-      const m = (r.date as string).slice(0, 7);
+    for (const r of invRows ?? []) {
+      const iso = r.issue_date as string | null;
+      if (!iso) continue;
+      const m = iso.slice(0, 7);
       if (!buckets[m]) continue;
-      const amt = Number(r.amount);
-      if (r.is_forecast) {
-        if (r.type === "entrata") buckets[m].income_forecast += amt;
-        else buckets[m].expense_forecast += amt;
-      } else {
-        if (r.type === "entrata") buckets[m].income_actual += amt;
-        else buckets[m].expense_actual += amt;
-      }
+      const raw = Number(r.total_amount);
+      const signed = r.document_type === "nota_credito" ? -raw : raw;
+      if (r.direction === "attiva") buckets[m].income_actual += signed;
+      else if (r.direction === "passiva") buckets[m].expense_actual += signed;
     }
+
 
     for (const p of projected) {
       const m = p.date.slice(0, 7);
